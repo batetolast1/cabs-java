@@ -43,6 +43,18 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>2.9.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.0.1-jre</version>
+        </dependency>
 
     </dependencies>
 
@@ -78,8 +90,6 @@
             </plugin>
         </plugins>
     </build>
-
-
 
 
 </project>
