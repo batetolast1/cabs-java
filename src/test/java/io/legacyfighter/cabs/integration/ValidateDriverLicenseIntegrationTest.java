@@ -20,16 +20,6 @@ class ValidateDriverLicenseIntegrationTest {
     private DriverService driverService;
 
     @Test
-    void cannotCreateActiveDriverWithInvalidLicense() {
-        // given
-        String invalidLicense = "invalid license";
-
-        // when
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> createActiveDriverWithLicense(invalidLicense));
-    }
-
-    @Test
     void canCreateActiveDriverWithValidLicense() {
         // given
         String validLicense = "9AAAA123456AA1AA";
