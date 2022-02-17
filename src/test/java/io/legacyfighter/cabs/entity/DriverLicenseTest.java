@@ -10,20 +10,16 @@ class DriverLicenseTest {
     @Test
     void cannotCreateInvalidLicense() {
         // given
-        String nullLicense = null;
         String emptyLicense = "";
         String invalidLicense = "invalid license";
 
         // when
-        assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> ImmutableDriverLicense.builder().license(nullLicense).build());
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImmutableDriverLicense.builder().license(emptyLicense).build());
+                .isThrownBy(() -> DriverLicense.withLicense(null));
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImmutableDriverLicense.builder().license(invalidLicense).build());
-
-        // then
-
+                .isThrownBy(() -> DriverLicense.withLicense(emptyLicense));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> DriverLicense.withLicense(invalidLicense));
     }
 
     @Test
@@ -32,10 +28,10 @@ class DriverLicenseTest {
         String validLicense = "9AAAA123456AA1AA";
 
         // when
-        DriverLicense driverLicense = ImmutableDriverLicense.builder().license(validLicense).build();
+        DriverLicense driverLicense = DriverLicense.withLicense(validLicense);
 
         // then
-        assertThat(driverLicense.getLicense()).isEqualTo(validLicense);
+        assertThat(driverLicense.asString()).isEqualTo(validLicense);
     }
 
     @Test
@@ -44,9 +40,9 @@ class DriverLicenseTest {
         String invalidLicense = "invalid license";
 
         // when
-        DriverLicense invalidDriverLicense = new InvalidDriverLicense(invalidLicense);
+        DriverLicense invalidDriverLicense = DriverLicense.withoutValidation(invalidLicense);
 
         // then
-        assertThat(invalidDriverLicense.getLicense()).isEqualTo(invalidLicense);
+        assertThat(invalidDriverLicense.asString()).isEqualTo(invalidLicense);
     }
 }

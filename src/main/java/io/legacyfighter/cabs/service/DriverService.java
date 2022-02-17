@@ -3,6 +3,7 @@ package io.legacyfighter.cabs.service;
 import io.legacyfighter.cabs.dto.DriverDTO;
 import io.legacyfighter.cabs.entity.Driver;
 import io.legacyfighter.cabs.entity.DriverAttribute;
+import io.legacyfighter.cabs.entity.DriverLicense;
 import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.repository.DriverAttributeRepository;
 import io.legacyfighter.cabs.repository.DriverRepository;
@@ -40,11 +41,10 @@ public class DriverService {
     public Driver createDriver(String license, String lastName, String firstName, Driver.Type type, Driver.Status status, String photo) {
         Driver driver = new Driver();
         if (status.equals(Driver.Status.ACTIVE)) {
-            if (license == null || license.isEmpty() || !license.matches(DRIVER_LICENSE_REGEX)) {
-                throw new IllegalArgumentException("Illegal license no = " + license);
-            }
+            driver.setDriverLicense(DriverLicense.withLicense(license));
+        } else {
+            driver.setDriverLicense(DriverLicense.withoutValidation(license));
         }
-        driver.setDriverLicense(license);
         driver.setLastName(lastName);
         driver.setFirstName(firstName);
         driver.setStatus(status);
@@ -65,17 +65,13 @@ public class DriverService {
         if (driver == null) {
             throw new IllegalArgumentException("Driver does not exists, id = " + driverId);
         }
-        if (newLicense == null || newLicense.isEmpty() || !newLicense.matches(DRIVER_LICENSE_REGEX)) {
-            throw new IllegalArgumentException("Illegal new license no = " + newLicense);
-        }
+
+        DriverLicense driverLicense = DriverLicense.withLicense(newLicense);
 
         if (!driver.getStatus().equals(Driver.Status.ACTIVE)) {
             throw new IllegalStateException("Driver is not active, cannot change license");
         }
-
-        driver.setDriverLicense(newLicense);
-
-
+        driver.setDriverLicense(driverLicense);
     }
 
 
@@ -86,12 +82,13 @@ public class DriverService {
             throw new IllegalArgumentException("Driver does not exists, id = " + driverId);
         }
         if (status.equals(Driver.Status.ACTIVE)) {
-            String license = driver.getDriverLicense();
-            if (license == null || license.isEmpty() || !license.matches(DRIVER_LICENSE_REGEX)) {
-                throw new IllegalStateException("Status cannot be ACTIVE. Illegal license no = " + license);
+            try {
+                // DriverLicense.validate() ???
+                driver.setDriverLicense(DriverLicense.withLicense(driver.getDriverLicense().asString()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException(e);
             }
         }
-
 
         driver.setStatus(status);
     }
@@ -159,7 +156,6 @@ public class DriverService {
         driverAttributeRepository.save(new DriverAttribute(driver, attr, value));
 
     }
-
 
 
 }

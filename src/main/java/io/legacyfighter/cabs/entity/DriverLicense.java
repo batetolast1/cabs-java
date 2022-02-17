@@ -1,20 +1,41 @@
 package io.legacyfighter.cabs.entity;
 
-import com.google.common.base.Preconditions;
-import org.immutables.value.Value;
-
+import javax.persistence.Embeddable;
 import java.util.regex.Pattern;
 
-@Value.Immutable
-interface DriverLicense {
+@Embeddable
+public class DriverLicense {
 
-    Pattern DRIVER_LICENSE_PATTERN = Pattern.compile("^[A-Z9]{5}\\d{6}[A-Z9]{2}\\d[A-Z]{2}$");
+    private static final Pattern DRIVER_LICENSE_PATTERN = Pattern.compile("^[A-Z9]{5}\\d{6}[A-Z9]{2}\\d[A-Z]{2}$");
 
-    String getLicense();
+    private String driverLicense;
 
-    @Value.Check
-    default void check() {
-        Preconditions.checkNotNull(getLicense(), "Driver licence must not be null");
-        Preconditions.checkArgument(DRIVER_LICENSE_PATTERN.matcher(getLicense()).matches(), "Driver licence must match licence pattern");
+    public DriverLicense() {
+    }
+
+    private DriverLicense(String driverLicense) {
+        this.driverLicense = driverLicense;
+    }
+
+    public static DriverLicense withLicense(String driverLicense) {
+        if (driverLicense == null || !DRIVER_LICENSE_PATTERN.matcher(driverLicense).matches()) {
+            throw new IllegalArgumentException("Illegal license no = " + driverLicense);
+        }
+        return new DriverLicense(driverLicense);
+    }
+
+    public static DriverLicense withoutValidation(String driverLicense) {
+        return new DriverLicense(driverLicense);
+    }
+
+    @Override
+    public String toString() {
+        return "DriverLicense{" +
+                "driverLicense='" + driverLicense + '\'' +
+                '}';
+    }
+
+    public String asString() {
+        return driverLicense;
     }
 }
