@@ -10,14 +10,14 @@ public class DriverFee extends BaseEntity {
 
     public Money calculateDriverFee(Money transitPrice) {
         Money finalFee;
-        if (getFeeType().equals(FeeType.FLAT)) {
-            finalFee = transitPrice.subtract(new Money(getAmount()));
+        if (feeType.equals(FeeType.FLAT)) {
+            finalFee = transitPrice.subtract(new Money(amount));
         } else {
-            finalFee = transitPrice.percentage(getAmount());
+            finalFee = transitPrice.percentage(amount);
 
         }
 
-        return new Money(Math.max(finalFee.toInt(), getMin() == null ? 0 : getMin().toInt()));
+        return new Money(Math.max(finalFee.toInt(), min == null ? 0 : min.toInt()));
     }
 
     public enum FeeType {
@@ -63,16 +63,8 @@ public class DriverFee extends BaseEntity {
         this.driver = driver;
     }
 
-    public Integer getAmount() {
-        return amount;
-    }
-
     public void setAmount(Integer amount) {
         this.amount = amount;
-    }
-
-    public Money getMin() {
-        return min;
     }
 
     public void setMin(Money min) {

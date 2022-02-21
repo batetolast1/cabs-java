@@ -10,7 +10,7 @@ class MoneyTest {
     @Test
     void canCreateMoneyFromInteger() {
         // expect
-        assertThat(new Money(0).toString()).hasToString("0.00");
+        assertThat(Money.ZERO.toString()).hasToString("0.00");
         assertThat(new Money(10000).toString()).hasToString("100.00");
         assertThat(new Money(1012).toString()).hasToString("10.12");
     }
@@ -18,7 +18,7 @@ class MoneyTest {
     @Test
     void shouldProjectMoneyToInteger() {
         //expect
-        assertThat(new Money(0).toInt()).isZero();
+        assertThat(Money.ZERO.toInt()).isZero();
         assertThat(new Money(10000).toInt()).isEqualTo(10000);
         assertThat(new Money(1012).toInt()).isEqualTo(1012);
     }
@@ -28,7 +28,7 @@ class MoneyTest {
         //expect
         assertThat(new Money(1000)).isEqualTo(new Money(500).add(new Money(500)));
         assertThat(new Money(1042)).isEqualTo(new Money(1020).add(new Money(22)));
-        assertThat(new Money(0)).isEqualTo(new Money(0).add(new Money(0)));
+        assertThat(Money.ZERO).isEqualTo(Money.ZERO.add(Money.ZERO));
         assertThat(new Money(-2)).isEqualTo(new Money(-4).add(new Money(2)));
     }
 

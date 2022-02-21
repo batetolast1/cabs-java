@@ -29,7 +29,6 @@ public class Fixtures {
     @Autowired
     DriverService driverService;
 
-
     public Transit aTransit(Driver driver, LocalDateTime dateTime) {
         Transit transit = new Transit();
         transit.setDateTime(dateTime.toInstant(ZoneOffset.UTC));
