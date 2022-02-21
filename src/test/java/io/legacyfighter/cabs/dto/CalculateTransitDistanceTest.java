@@ -1,5 +1,6 @@
 package io.legacyfighter.cabs.dto;
 
+import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.entity.Address;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
@@ -16,7 +17,7 @@ class CalculateTransitDistanceTest {
     @Test
     void shouldNotWorkWithInvalidUnit() {
         // given
-        TransitDTO transitDTO = new TransitDTO();
+        TransitDTO transitDTO = transitForDistance(10);
         // and
         String invalidUnit = "invalid unit";
 
@@ -56,7 +57,7 @@ class CalculateTransitDistanceTest {
         t.setTo(new Address());
         t.setFrom(new Address());
         t.setStatus(Transit.Status.DRAFT);
-        t.setKm(km);
+        t.setKm(Distance.ofKm(km));
         t.setClient(new Client());
         return new TransitDTO(t);
     }

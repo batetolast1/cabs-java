@@ -1,5 +1,6 @@
 package io.legacyfighter.cabs.common;
 
+import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.entity.Driver;
 import io.legacyfighter.cabs.entity.DriverFee;
 import io.legacyfighter.cabs.entity.Transit;
@@ -34,7 +35,7 @@ public class Fixtures {
         transit.setDateTime(dateTime.toInstant(ZoneOffset.UTC));
         transit.setDriver(driver);
         transit.setStatus(Transit.Status.DRAFT);
-        transit.setKm(10.0f);
+        transit.setKm(Distance.ofKm(10.0f));
         transit.setStatus(Transit.Status.COMPLETED);
         transit.setPrice(transit.calculateFinalCosts());
 

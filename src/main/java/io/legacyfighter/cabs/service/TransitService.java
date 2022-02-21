@@ -1,5 +1,6 @@
 package io.legacyfighter.cabs.service;
 
+import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.dto.AddressDTO;
 import io.legacyfighter.cabs.dto.DriverPositionDTOV2;
 import io.legacyfighter.cabs.dto.TransitDTO;
@@ -98,7 +99,7 @@ public class TransitService {
         transit.setCarType(carClass);
         transit.setStatus(Transit.Status.DRAFT);
         transit.setDateTime(Instant.now(clock));
-        transit.setKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
+        transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1])));
 
         return transitRepository.save(transit);
     }
@@ -148,7 +149,7 @@ public class TransitService {
         }
 
         transit.setFrom(newAddress);
-        transit.setKm((float) distanceCalculator.calculateByMap(geoFromNew[0], geoFromNew[1], geoFromOld[0], geoFromOld[1]));
+        transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFromNew[0], geoFromNew[1], geoFromOld[0], geoFromOld[1])));
         transit.setPickupAddressChangeCounter(transit.getPickupAddressChangeCounter() + 1);
         transitRepository.save(transit);
 
@@ -185,7 +186,7 @@ public class TransitService {
         double[] geoTo = geocodingService.geocodeAddress(newAddress);
 
         transit.setTo(newAddress);
-        transit.setKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
+        transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1])));
 
         if (transit.getDriver() != null) {
             notificationService.notifyAboutChangedTransitAddress(transit.getDriver().getId(), transitId);
@@ -210,7 +211,7 @@ public class TransitService {
 
         transit.setStatus(Transit.Status.CANCELLED);
         transit.setDriver(null);
-        transit.setKm(0);
+        transit.setKm(Distance.ZERO);
         transit.setAwaitingDriversResponses(0);
         transitRepository.save(transit);
     }
@@ -262,7 +263,7 @@ public class TransitService {
                     ) {
                         transit.setStatus(Transit.Status.DRIVER_ASSIGNMENT_FAILED);
                         transit.setDriver(null);
-                        transit.setKm(0);
+                        transit.setKm(Distance.ZERO);
                         transit.setAwaitingDriversResponses(0);
                         transitRepository.save(transit);
                         return transit;
@@ -475,7 +476,7 @@ public class TransitService {
             double[] geoTo = geocodingService.geocodeAddress(transit.getTo());
 
             transit.setTo(destinationAddress);
-            transit.setKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
+            transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1])));
             transit.setStatus(Transit.Status.COMPLETED);
             transit.calculateFinalCosts();
             driver.setOccupied(false);
