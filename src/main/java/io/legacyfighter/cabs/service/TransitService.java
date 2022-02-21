@@ -4,6 +4,7 @@ import io.legacyfighter.cabs.dto.AddressDTO;
 import io.legacyfighter.cabs.dto.DriverPositionDTOV2;
 import io.legacyfighter.cabs.dto.TransitDTO;
 import io.legacyfighter.cabs.entity.*;
+import io.legacyfighter.cabs.money.Money;
 import io.legacyfighter.cabs.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
@@ -236,12 +240,11 @@ public class TransitService {
                     .equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT)) {
 
 
-
                 Integer distanceToCheck = 0;
 
                 // Tested on production, works as expected.
                 // If you change this code and the system will collapse AGAIN, I'll find you...
-                while (true)     {
+                while (true) {
                     if (transit.getAwaitingDriversResponses()
                             > 4) {
                         return transit;
@@ -258,7 +261,8 @@ public class TransitService {
                             (transit.getStatus().equals(Transit.Status.CANCELLED))
                     ) {
                         transit.setStatus(Transit.Status.DRIVER_ASSIGNMENT_FAILED);
-                        transit.setDriver(null);transit.setKm(0);
+                        transit.setDriver(null);
+                        transit.setKm(0);
                         transit.setAwaitingDriversResponses(0);
                         transitRepository.save(transit);
                         return transit;
@@ -310,16 +314,16 @@ public class TransitService {
                         List<CarType.CarClass> carClasses = new ArrayList<>();
                         List<CarType.CarClass> activeCarClasses = carTypeService.findActiveCarClasses();
                         if (activeCarClasses.isEmpty()) {
-                                    return transit;
+                            return transit;
                         }
                         if (transit.getCarType()
 
                                 != null) {
                             if (activeCarClasses.contains(transit.getCarType())) {
                                 carClasses.add(transit.getCarType());
-                            }else {
+                            } else {
                                 return transit;
-                                }
+                            }
                         } else {
                             carClasses.addAll(activeCarClasses);
                         }
@@ -343,7 +347,8 @@ public class TransitService {
                                     driver.getOccupied() == false) {
                                 if (!transit.getDriversRejections()
                                         .contains(driver)) {
-                                    transit.getProposedDrivers().add(driver);transit.setAwaitingDriversResponses(transit.getAwaitingDriversResponses() + 1);
+                                    transit.getProposedDrivers().add(driver);
+                                    transit.setAwaitingDriversResponses(transit.getAwaitingDriversResponses() + 1);
                                     notificationService.notifyAboutPossibleTransit(driver.getId(), transitId);
                                 }
                             } else {
@@ -476,11 +481,11 @@ public class TransitService {
             driver.setOccupied(false);
             transit.completeAt(Instant.now(clock));
             Integer driverFee = driverFeeService.calculateDriverFee(transitId);
-            transit.setDriversFee(driverFee);
+            transit.setDriversFee(new Money(driverFee));
             driverRepository.save(driver);
             awardsService.registerMiles(transit.getClient().getId(), transitId);
             transitRepository.save(transit);
-            invoiceGenerator.generate(transit.getPrice(), transit.getClient().getName() + " " + transit.getClient().getLastName());
+            invoiceGenerator.generate(transit.getPrice().toInt(), transit.getClient().getName() + " " + transit.getClient().getLastName());
         } else {
             throw new IllegalArgumentException("Cannot complete Transit, id = " + transitId);
         }

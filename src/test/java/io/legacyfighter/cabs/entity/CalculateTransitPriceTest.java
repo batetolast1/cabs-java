@@ -1,5 +1,6 @@
 package io.legacyfighter.cabs.entity;
 
+import io.legacyfighter.cabs.money.Money;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,55 +46,55 @@ class CalculateTransitPriceTest {
     @Test
     void calculateFinalCostsOnRegularDay() {
         // given
-        Transit transit = aTransit(Transit.Status.COMPLETED, LocalDateTime.of(2022, Month.APRIL, 20, 14, 0));
+        Transit transit = aCompletedTransit(LocalDateTime.of(2022, Month.APRIL, 20, 14, 0));
 
         // when
-        Integer finalCosts = transit.calculateFinalCosts();
+        Money finalCosts = transit.calculateFinalCosts();
 
         // then
-        assertThat(finalCosts).isEqualTo(900);
+        assertThat(finalCosts).isEqualTo(new Money(900));
     }
 
     @Test
     void calculateFinalCostsOnWeekend() {
         // given
-        Transit transit = aTransit(Transit.Status.COMPLETED, LocalDateTime.of(2022, Month.FEBRUARY, 18, 18, 0));
+        Transit transit = aCompletedTransit(LocalDateTime.of(2022, Month.FEBRUARY, 18, 18, 0));
 
         // when
-        Integer finalCosts = transit.calculateFinalCosts();
+        Money finalCosts = transit.calculateFinalCosts();
 
         // then
-        assertThat(finalCosts).isEqualTo(1000);
+        assertThat(finalCosts).isEqualTo(new Money(1000));
     }
 
     @Test
     void calculateFinalCostsOnRestOfWeekend() {
         // given
-        Transit transit = aTransit(Transit.Status.COMPLETED, LocalDateTime.of(2022, Month.FEBRUARY, 19, 15, 0));
+        Transit transit = aCompletedTransit(LocalDateTime.of(2022, Month.FEBRUARY, 19, 15, 0));
 
         // when
-        Integer finalCosts = transit.calculateFinalCosts();
+        Money finalCosts = transit.calculateFinalCosts();
 
         // then
-        assertThat(finalCosts).isEqualTo(800);
+        assertThat(finalCosts).isEqualTo(new Money(800));
     }
 
     @Test
     void calculateFinalCostsOnNewYear() {
         // given
-        Transit transit = aTransit(Transit.Status.COMPLETED, LocalDateTime.of(2022, Month.JANUARY, 1, 5, 0));
+        Transit transit = aCompletedTransit(LocalDateTime.of(2022, Month.JANUARY, 1, 5, 0));
 
         // when
-        Integer finalCosts = transit.calculateFinalCosts();
+        Money finalCosts = transit.calculateFinalCosts();
 
         // then
-        assertThat(finalCosts).isEqualTo(1100);
+        assertThat(finalCosts).isEqualTo(new Money(1100));
     }
 
-    private Transit aTransit(Transit.Status status, LocalDateTime dateTime) {
+    private Transit aCompletedTransit(LocalDateTime dateTime) {
         Transit transit = new Transit();
         transit.setDateTime(dateTime.toInstant(ZoneOffset.UTC));
-        transit.setStatus(status);
+        transit.setStatus(Transit.Status.COMPLETED);
         return transit;
     }
 }

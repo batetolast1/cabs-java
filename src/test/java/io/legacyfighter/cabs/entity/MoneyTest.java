@@ -1,5 +1,6 @@
 package io.legacyfighter.cabs.entity;
 
+import io.legacyfighter.cabs.money.Money;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

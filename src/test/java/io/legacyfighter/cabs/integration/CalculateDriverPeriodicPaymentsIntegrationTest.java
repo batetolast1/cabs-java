@@ -3,6 +3,7 @@ package io.legacyfighter.cabs.integration;
 import io.legacyfighter.cabs.entity.Driver;
 import io.legacyfighter.cabs.entity.DriverFee;
 import io.legacyfighter.cabs.entity.Transit;
+import io.legacyfighter.cabs.money.Money;
 import io.legacyfighter.cabs.repository.DriverFeeRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
 import io.legacyfighter.cabs.service.DriverFeeService;
@@ -115,7 +116,7 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         driverFee.setDriver(driver);
         driverFee.setFeeType(feeType);
         driverFee.setAmount(amount);
-        driverFee.setMin(minimumFee);
+        driverFee.setMin(new Money(minimumFee));
 
         driverFeeRepository.save(driverFee);
     }

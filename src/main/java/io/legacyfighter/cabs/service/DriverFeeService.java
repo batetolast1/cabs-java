@@ -1,9 +1,9 @@
 package io.legacyfighter.cabs.service;
 
-import io.legacyfighter.cabs.repository.DriverFeeRepository;
-import io.legacyfighter.cabs.repository.TransitRepository;
 import io.legacyfighter.cabs.entity.DriverFee;
 import io.legacyfighter.cabs.entity.Transit;
+import io.legacyfighter.cabs.repository.DriverFeeRepository;
+import io.legacyfighter.cabs.repository.TransitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +24,9 @@ public class DriverFeeService {
             throw new IllegalArgumentException("transit does not exist, id = " + transitId);
         }
         if (transit.getDriversFee() != null) {
-            return transit.getDriversFee();
+            return transit.getDriversFee().toInt();
         }
-        Integer transitPrice = transit.getPrice();
+        Integer transitPrice = transit.getPrice().toInt();
         DriverFee driverFee = driverFeeRepository.findByDriver(transit.getDriver());
         if (driverFee == null) {
             throw new IllegalArgumentException("driver Fees not defined for driver, driver id = " + transit.getDriver().getId());
@@ -39,6 +39,6 @@ public class DriverFeeService {
 
         }
 
-        return Math.max(finalFee, driverFee.getMin() == null ? 0 : driverFee.getMin());
+        return Math.max(finalFee, driverFee.getMin() == null ? 0 : driverFee.getMin().toInt());
     }
 }
