@@ -62,7 +62,7 @@ class TariffRecognizingIntegrationTest {
     @Test
     void standardTariffShouldBeDisplayed() {
         // given
-        Transit transit = fixtures.aCompletedTransitAt(Dates.REGULAR_DAY);
+        Transit transit = fixtures.aCompletedTransitAt(Dates.STANDARD_DAY);
 
         // when
         TransitDTO transitDTO = transitController.getTransit(transit.getId());

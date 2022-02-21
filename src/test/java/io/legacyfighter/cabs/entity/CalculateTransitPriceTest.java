@@ -68,7 +68,7 @@ class CalculateTransitPriceTest {
     }
 
     @Test
-    void estimateFinalCostOnWeekend() {
+    void estimateFinalCostOnWeekendPlus() {
         // given
         Transit transit = aDraftTransitAt(Dates.WEEKEND_PLUS);
 
@@ -80,7 +80,7 @@ class CalculateTransitPriceTest {
     }
 
     @Test
-    void estimateFinalCostOnRestOfWeekend() {
+    void estimateFinalCostOnWeekend() {
         // given
         Transit transit = aDraftTransitAt(Dates.WEEKEND);
 
@@ -92,9 +92,9 @@ class CalculateTransitPriceTest {
     }
 
     @Test
-    void estimateFinalCostOnRegularDay() {
+    void estimateFinalCostOnStandardDay() {
         // given
-        Transit transit = aDraftTransitAt(Dates.REGULAR_DAY);
+        Transit transit = aDraftTransitAt(Dates.STANDARD_DAY);
 
         // when
         Money estimateCost = transit.estimateCost();
@@ -128,7 +128,7 @@ class CalculateTransitPriceTest {
     }
 
     @Test
-    void calculateFinalCostsOnWeekend() {
+    void calculateFinalCostsOnWeekendPlus() {
         // given
         Transit transit = aCompletedTransitAt(Dates.WEEKEND_PLUS);
 
@@ -140,7 +140,7 @@ class CalculateTransitPriceTest {
     }
 
     @Test
-    void calculateFinalCostsOnRestOfWeekend() {
+    void calculateFinalCostsOnWeekend() {
         // given
         Transit transit = aCompletedTransitAt(Dates.WEEKEND);
 
@@ -152,9 +152,9 @@ class CalculateTransitPriceTest {
     }
 
     @Test
-    void calculateFinalCostsOnRegularDay() {
+    void calculateFinalCostsOnStandardDay() {
         // given
-        Transit transit = aCompletedTransitAt(Dates.REGULAR_DAY);
+        Transit transit = aCompletedTransitAt(Dates.STANDARD_DAY);
 
         // when
         Money finalCosts = transit.calculateFinalCosts();
