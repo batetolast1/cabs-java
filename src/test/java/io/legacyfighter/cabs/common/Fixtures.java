@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
 
 import static io.legacyfighter.cabs.entity.Driver.Status.ACTIVE;
 import static io.legacyfighter.cabs.entity.Driver.Type.REGULAR;
@@ -37,7 +37,7 @@ public class Fixtures {
 
     public Transit aTransit(Driver driver, LocalDateTime dateTime) {
         Transit transit = new Transit();
-        transit.setDateTime(dateTime.toInstant(ZoneOffset.UTC));
+        transit.setDateTime(dateTime.toInstant(OffsetDateTime.now().getOffset()));
         transit.setDriver(driver);
         transit.setStatus(Transit.Status.DRAFT);
         transit.setKm(Distance.ofKm(10.0f));

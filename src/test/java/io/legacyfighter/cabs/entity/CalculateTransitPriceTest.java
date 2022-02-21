@@ -8,7 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -165,14 +165,14 @@ class CalculateTransitPriceTest {
 
     private Transit aCompletedTransitAt(LocalDateTime dateTime) {
         Transit transit = new Transit();
-        transit.setDateTime(dateTime.toInstant(ZoneOffset.UTC));
+        transit.setDateTime(dateTime.toInstant(OffsetDateTime.now().getOffset()));
         transit.setStatus(Transit.Status.COMPLETED);
         return transit;
     }
 
     private Transit aDraftTransitAt(LocalDateTime dateTime) {
         Transit transit = new Transit();
-        transit.setDateTime(dateTime.toInstant(ZoneOffset.UTC));
+        transit.setDateTime(dateTime.toInstant(OffsetDateTime.now().getOffset()));
         transit.setStatus(Transit.Status.DRAFT);
         return transit;
     }

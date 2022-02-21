@@ -3,30 +3,34 @@ package io.legacyfighter.cabs.entity;
 import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.money.Money;
 
+import javax.persistence.Embeddable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.Month;
 
+@Embeddable
 public class Tariff {
 
     private static final Integer BASE_FEE = 8;
 
-    private final Float kmRate;
+    private Float kmRate;
 
-    private final String name;
+    private String name;
 
-    private final Integer baseFee;
+    private Integer baseFee;
 
-    private Tariff(Float kmRate, String name, Integer baseFee) {
+    public Tariff() {
+    }
+
+    private Tariff(float kmRate, String name, Integer baseFee) {
         this.kmRate = kmRate;
         this.name = name;
         this.baseFee = baseFee;
     }
 
     public static Tariff ofTime(LocalDateTime dateTime) {
-        // wprowadzenie nowych cennikow od 1.01.2019
         if ((dateTime.getMonth() == Month.DECEMBER && dateTime.getDayOfMonth() == 31) ||
                 (dateTime.getMonth() == Month.JANUARY && dateTime.getDayOfMonth() == 1 && dateTime.getHour() <= 6)) {
             return new Tariff(3.50f, "Sylwester", BASE_FEE + 3);
@@ -50,22 +54,34 @@ public class Tariff {
         }
     }
 
+    public Money calculateCost(Distance distance) {
+        BigDecimal priceBigDecimal = BigDecimal.valueOf(distance.toKmInFloat() * kmRate + baseFee)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return new Money(Integer.parseInt(String.valueOf(priceBigDecimal).replace(".", "")));
+    }
+
     public Float getKmRate() {
         return kmRate;
+    }
+
+    public void setKmRate(Float kmRate) {
+        this.kmRate = kmRate;
     }
 
     public String getName() {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Integer getBaseFee() {
         return baseFee;
     }
 
-    public Money calculateCost(Distance distance) {
-        BigDecimal priceBigDecimal = BigDecimal.valueOf(distance.toKmInFloat() * kmRate + baseFee)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        return new Money(Integer.parseInt(String.valueOf(priceBigDecimal).replace(".", "")));
+    public void setBaseFee(Integer baseFee) {
+        this.baseFee = baseFee;
     }
 }
