@@ -45,10 +45,10 @@ class CalculateDriverFeeIntegrationTest {
         driverHasFee(driver, DriverFee.FeeType.FLAT, 50, 0);
 
         // when
-        Integer integer = driverFeeService.calculateDriverFee(transit.getId());
+        Money driverFee = driverFeeService.calculateDriverFee(transit.getId());
 
         // then
-        assertThat(integer).isEqualTo(1850);
+        assertThat(driverFee).isEqualTo(new Money(1850));
     }
 
     @Test
@@ -61,10 +61,10 @@ class CalculateDriverFeeIntegrationTest {
         driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 50, 0);
 
         // when
-        Integer integer = driverFeeService.calculateDriverFee(transit.getId());
+        Money driverFee = driverFeeService.calculateDriverFee(transit.getId());
 
         // then
-        assertThat(integer).isEqualTo(950);
+        assertThat(driverFee).isEqualTo(new Money(950));
     }
 
     @Test
@@ -79,10 +79,10 @@ class CalculateDriverFeeIntegrationTest {
         driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 0, minimumFee);
 
         // when
-        Integer fee = driverFeeService.calculateDriverFee(transit.getId());
+        Money driverFee = driverFeeService.calculateDriverFee(transit.getId());
 
         // then
-        assertThat(fee).isEqualTo(minimumFee);
+        assertThat(driverFee).isEqualTo(new Money(minimumFee));
 
     }
 

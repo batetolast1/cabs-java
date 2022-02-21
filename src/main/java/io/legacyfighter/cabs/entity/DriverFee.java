@@ -8,6 +8,18 @@ import javax.persistence.*;
 @Entity
 public class DriverFee extends BaseEntity {
 
+    public Money calculateDriverFee(Money transitPrice) {
+        Money finalFee;
+        if (getFeeType().equals(FeeType.FLAT)) {
+            finalFee = transitPrice.subtract(new Money(getAmount()));
+        } else {
+            finalFee = transitPrice.percentage(getAmount());
+
+        }
+
+        return new Money(Math.max(finalFee.toInt(), getMin() == null ? 0 : getMin().toInt()));
+    }
+
     public enum FeeType {
         FLAT, PERCENTAGE
     }

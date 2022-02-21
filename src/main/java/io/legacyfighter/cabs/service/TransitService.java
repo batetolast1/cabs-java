@@ -480,8 +480,8 @@ public class TransitService {
             transit.calculateFinalCosts();
             driver.setOccupied(false);
             transit.completeAt(Instant.now(clock));
-            Integer driverFee = driverFeeService.calculateDriverFee(transitId);
-            transit.setDriversFee(new Money(driverFee));
+            Money driverFee = driverFeeService.calculateDriverFee(transitId);
+            transit.setDriversFee(driverFee);
             driverRepository.save(driver);
             awardsService.registerMiles(transit.getClient().getId(), transitId);
             transitRepository.save(transit);

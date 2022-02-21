@@ -198,8 +198,8 @@ public class Transit extends BaseEntity {
             }
         }
         BigDecimal priceBigDecimal = new BigDecimal(km * kmRate * factorToCalculate + baseFee).setScale(2, RoundingMode.HALF_UP);
-        int finalPrice = Integer.parseInt(String.valueOf(priceBigDecimal).replaceAll("\\.", ""));
-        this.price = new Money(finalPrice);
+        Money finalPrice = new Money(Integer.parseInt(String.valueOf(priceBigDecimal).replaceAll("\\.", "")));
+        this.price = finalPrice;
         return this.price;
     }
 
@@ -324,9 +324,4 @@ public class Transit extends BaseEntity {
     public Money getEstimatedPrice() {
         return estimatedPrice;
     }
-
-    public void setEstimatedPrice(Money estimatedPrice) {
-        this.estimatedPrice = estimatedPrice;
-    }
-
 }

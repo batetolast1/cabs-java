@@ -15,12 +15,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.legacyfighter.cabs.entity.Driver.Status.ACTIVE;
 import static io.legacyfighter.cabs.entity.Driver.Type.REGULAR;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 class CalculateDriverPeriodicPaymentsIntegrationTest {
@@ -52,17 +52,17 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         driverHasFee(driver, DriverFee.FeeType.FLAT, 100, 0);
 
         // when
-        Integer integer = driverService.calculateDriverMonthlyPayment(driver.getId(), 2022, 4);
+        Money monthlyPayment = driverService.calculateDriverMonthlyPayment(driver.getId(), 2022, 4);
 
         // then
-        assertThat(integer).isEqualTo(11600);
+        assertThat(monthlyPayment).isEqualTo(new Money(11600));
     }
 
     @Test
     void calculateYearlyPayment() {
         // given
         Driver driver = aDriver();
-        //and
+        // and
         aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 5, 14, 0));
         aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 10, 14, 0));
         aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 15, 14, 0));
@@ -73,26 +73,28 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 5, 14, 0));
         aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 15, 14, 0));
         aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 25, 14, 0));
-
         // and
         driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 50, 10);
 
         // when
-        Map<Month, Integer> payments = driverService.calculateDriverYearlyPayment(driver.getId(), 2022);
+        Map<Month, Money> yearlyPayment = driverService.calculateDriverYearlyPayment(driver.getId(), 2022);
 
         // then
-        assertEquals(0, payments.get(Month.JANUARY));
-        assertEquals(0, payments.get(Month.FEBRUARY));
-        assertEquals(0, payments.get(Month.MARCH));
-        assertEquals(6100, payments.get(Month.APRIL));
-        assertEquals(0, payments.get(Month.MAY));
-        assertEquals(0, payments.get(Month.JUNE));
-        assertEquals(0, payments.get(Month.JULY));
-        assertEquals(0, payments.get(Month.AUGUST));
-        assertEquals(0, payments.get(Month.SEPTEMBER));
-        assertEquals(3050, payments.get(Month.OCTOBER));
-        assertEquals(0, payments.get(Month.NOVEMBER));
-        assertEquals(0, payments.get(Month.DECEMBER));
+        Map<Month, Money> expected = new HashMap<>();
+        expected.put(Month.JANUARY, Money.ZERO);
+        expected.put(Month.FEBRUARY, Money.ZERO);
+        expected.put(Month.MARCH, Money.ZERO);
+        expected.put(Month.APRIL, new Money(6100));
+        expected.put(Month.MAY, Money.ZERO);
+        expected.put(Month.JUNE, Money.ZERO);
+        expected.put(Month.JULY, Money.ZERO);
+        expected.put(Month.AUGUST, Money.ZERO);
+        expected.put(Month.SEPTEMBER, Money.ZERO);
+        expected.put(Month.OCTOBER, new Money(3050));
+        expected.put(Month.NOVEMBER, Money.ZERO);
+        expected.put(Month.DECEMBER, Money.ZERO);
+
+        assertThat(yearlyPayment).containsExactlyEntriesOf(expected);
     }
 
     private Driver aDriver() {
