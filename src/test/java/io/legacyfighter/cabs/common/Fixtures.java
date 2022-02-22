@@ -41,12 +41,12 @@ public class Fixtures {
         transitRepository.save(transit);
     }
 
-    public void driverHasFee(Driver driver, DriverFee.FeeType feeType, int amount, int minimumFee) {
+    public void driverHasFee(Driver driver, DriverFee.FeeType feeType, int amount, Money minimumFee) {
         DriverFee driverFee = new DriverFee();
         driverFee.setDriver(driver);
         driverFee.setFeeType(feeType);
         driverFee.setAmount(amount);
-        driverFee.setMin(new Money(minimumFee));
+        driverFee.setMin(minimumFee);
 
         driverFeeRepository.save(driverFee);
     }

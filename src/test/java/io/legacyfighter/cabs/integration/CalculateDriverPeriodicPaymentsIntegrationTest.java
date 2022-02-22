@@ -37,7 +37,7 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 25, 14, 0));
         fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 30, 14, 0));
         // and
-        fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 100, 0);
+        fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 100, new Money(0));
 
         // when
         Money monthlyPayment = driverService.calculateDriverMonthlyPayment(driver.getId(), 2022, 4);
@@ -62,7 +62,7 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         fixtures.aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 15, 14, 0));
         fixtures.aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 25, 14, 0));
         // and
-        fixtures.driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 50, 10);
+        fixtures.driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 50, new Money(10));
 
         // when
         Map<Month, Money> yearlyPayment = driverService.calculateDriverYearlyPayment(driver.getId(), 2022);
