@@ -1,16 +1,9 @@
 package io.legacyfighter.cabs.entity;
 
-import io.legacyfighter.cabs.common.Dates;
-import io.legacyfighter.cabs.money.Money;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class CalculateTransitPriceTest {
 
@@ -41,139 +34,5 @@ class CalculateTransitPriceTest {
         // when
         Assertions.assertThatExceptionOfType(IllegalStateException.class)
                 .isThrownBy(transit::calculateFinalCosts);
-    }
-
-    @Test
-    void estimateFinalCostBefore2019() {
-        // given
-        Transit transit = aDraftTransitAt(Dates.BEFORE_2019);
-
-        // when
-        Money estimateCost = transit.estimateCost();
-
-        // then
-        assertThat(estimateCost).isEqualTo(new Money(900));
-    }
-
-    @Test
-    void estimateFinalCostOnNewYearsEve() {
-        // given
-        Transit transit = aDraftTransitAt(Dates.NEW_YEARS_EVE);
-
-        // when
-        Money estimateCost = transit.estimateCost();
-
-        // then
-        assertThat(estimateCost).isEqualTo(new Money(1100));
-    }
-
-    @Test
-    void estimateFinalCostOnWeekendPlus() {
-        // given
-        Transit transit = aDraftTransitAt(Dates.WEEKEND_PLUS);
-
-        // when
-        Money estimateCost = transit.estimateCost();
-
-        // then
-        assertThat(estimateCost).isEqualTo(new Money(1000));
-    }
-
-    @Test
-    void estimateFinalCostOnWeekend() {
-        // given
-        Transit transit = aDraftTransitAt(Dates.WEEKEND);
-
-        // when
-        Money estimateCost = transit.estimateCost();
-
-        // then
-        assertThat(estimateCost).isEqualTo(new Money(800));
-    }
-
-    @Test
-    void estimateFinalCostOnStandardDay() {
-        // given
-        Transit transit = aDraftTransitAt(Dates.STANDARD_DAY);
-
-        // when
-        Money estimateCost = transit.estimateCost();
-
-        // then
-        assertThat(estimateCost).isEqualTo(new Money(900));
-    }
-
-    @Test
-    void calculateFinalCostsBefore2019() {
-        // given
-        Transit transit = aCompletedTransitAt(Dates.BEFORE_2019);
-
-        // when
-        Money finalCosts = transit.calculateFinalCosts();
-
-        // then
-        assertThat(finalCosts).isEqualTo(new Money(900));
-    }
-
-    @Test
-    void calculateFinalCostsOnNewYearsEve() {
-        // given
-        Transit transit = aCompletedTransitAt(Dates.NEW_YEARS_EVE);
-
-        // when
-        Money finalCosts = transit.calculateFinalCosts();
-
-        // then
-        assertThat(finalCosts).isEqualTo(new Money(1100));
-    }
-
-    @Test
-    void calculateFinalCostsOnWeekendPlus() {
-        // given
-        Transit transit = aCompletedTransitAt(Dates.WEEKEND_PLUS);
-
-        // when
-        Money finalCosts = transit.calculateFinalCosts();
-
-        // then
-        assertThat(finalCosts).isEqualTo(new Money(1000));
-    }
-
-    @Test
-    void calculateFinalCostsOnWeekend() {
-        // given
-        Transit transit = aCompletedTransitAt(Dates.WEEKEND);
-
-        // when
-        Money finalCosts = transit.calculateFinalCosts();
-
-        // then
-        assertThat(finalCosts).isEqualTo(new Money(800));
-    }
-
-    @Test
-    void calculateFinalCostsOnStandardDay() {
-        // given
-        Transit transit = aCompletedTransitAt(Dates.STANDARD_DAY);
-
-        // when
-        Money finalCosts = transit.calculateFinalCosts();
-
-        // then
-        assertThat(finalCosts).isEqualTo(new Money(900));
-    }
-
-    private Transit aCompletedTransitAt(LocalDateTime dateTime) {
-        Transit transit = new Transit();
-        transit.setDateTime(dateTime.toInstant(OffsetDateTime.now().getOffset()));
-        transit.setStatus(Transit.Status.COMPLETED);
-        return transit;
-    }
-
-    private Transit aDraftTransitAt(LocalDateTime dateTime) {
-        Transit transit = new Transit();
-        transit.setDateTime(dateTime.toInstant(OffsetDateTime.now().getOffset()));
-        transit.setStatus(Transit.Status.DRAFT);
-        return transit;
     }
 }
