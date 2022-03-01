@@ -2,7 +2,9 @@ package io.legacyfighter.cabs.dto;
 
 import io.legacyfighter.cabs.entity.Client;
 
-public class ClientDTO  {
+import java.util.Objects;
+
+public class ClientDTO {
 
     private Long id;
 
@@ -77,4 +79,16 @@ public class ClientDTO  {
         this.id = id;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClientDTO clientDTO = (ClientDTO) o;
+        return Objects.equals(id, clientDTO.id) && type == clientDTO.type && Objects.equals(name, clientDTO.name) && Objects.equals(lastName, clientDTO.lastName) && defaultPaymentType == clientDTO.defaultPaymentType && clientType == clientDTO.clientType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, type, name, lastName, defaultPaymentType, clientType);
+    }
 }

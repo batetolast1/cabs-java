@@ -141,8 +141,7 @@ public class TransitService {
         // calculate the result
         double distanceInKMeters = c * r;
 
-        if (!(transit.getStatus().equals(Transit.Status.DRAFT) ||
-                (transit.getStatus().equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT))) ||
+        if (!(transit.getStatus().equals(Transit.Status.DRAFT) || (transit.getStatus().equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT))) ||
                 (transit.getPickupAddressChangeCounter() > 2) ||
                 (distanceInKMeters > 0.25)) {
             throw new IllegalStateException("Address 'from' cannot be changed, id = " + transitId);

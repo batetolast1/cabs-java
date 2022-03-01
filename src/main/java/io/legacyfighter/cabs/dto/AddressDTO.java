@@ -2,7 +2,9 @@ package io.legacyfighter.cabs.dto;
 
 import io.legacyfighter.cabs.entity.Address;
 
-public class AddressDTO  {
+import java.util.Objects;
+
+public class AddressDTO {
 
     public AddressDTO() {
 
@@ -117,5 +119,18 @@ public class AddressDTO  {
         address.setPostalCode(this.getPostalCode());
         address.setDistrict(this.getDistrict());
         return address;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AddressDTO that = (AddressDTO) o;
+        return Objects.equals(country, that.country) && Objects.equals(district, that.district) && Objects.equals(city, that.city) && Objects.equals(street, that.street) && Objects.equals(buildingNumber, that.buildingNumber) && Objects.equals(additionalNumber, that.additionalNumber) && Objects.equals(postalCode, that.postalCode) && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(country, district, city, street, buildingNumber, additionalNumber, postalCode, name);
     }
 }
