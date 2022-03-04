@@ -1,13 +1,12 @@
 package io.legacyfighter.cabs.dto;
 
 import io.legacyfighter.cabs.distance.Distance;
-import io.legacyfighter.cabs.entity.Address;
-import io.legacyfighter.cabs.entity.Client;
-import io.legacyfighter.cabs.entity.Transit;
-import io.legacyfighter.cabs.money.Money;
+import io.legacyfighter.cabs.entity.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -51,14 +50,15 @@ class CalculateTransitDistanceTest {
     }
 
     private TransitDTO transitForDistance(float km) {
-        Transit t = new Transit();
-        t.setPrice(new Money(10));
-        t.setDateTime(Instant.now());
-        t.setTo(new Address());
-        t.setFrom(new Address());
-        t.setStatus(Transit.Status.DRAFT);
-        t.setKm(Distance.ofKm(km));
-        t.setClient(new Client());
-        return new TransitDTO(t);
+        Instant dateTime = LocalDateTime.now().toInstant(OffsetDateTime.now().getOffset());
+        Distance distance = Distance.ofKm(km);
+        Driver driver = new Driver();
+        driver.setDriverLicense(DriverLicense.withoutValidation(""));
+        Transit transit = new Transit(new Address(), new Address(), new Client(), CarType.CarClass.VAN, dateTime, distance);
+        transit.proposeTo(driver);
+        transit.acceptBy(driver, dateTime);
+        transit.startAt(dateTime);
+        transit.completeAt(dateTime, new Address(), distance);
+        return new TransitDTO(transit);
     }
 }

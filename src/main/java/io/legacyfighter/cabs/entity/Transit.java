@@ -7,6 +7,8 @@ import io.legacyfighter.cabs.money.Money;
 import javax.persistence.*;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,10 +16,6 @@ import static io.legacyfighter.cabs.distance.Distance.ofKm;
 
 @Entity
 public class Transit extends BaseEntity {
-
-
-    public Transit() {
-    }
 
     public enum Status {
         DRAFT,
@@ -94,44 +92,146 @@ public class Transit extends BaseEntity {
     @OneToOne
     public Client client;
 
-    public CarType.CarClass getCarType() {
-        return carType;
-    }
-
     @Enumerated(EnumType.STRING)
     private CarType.CarClass carType;
 
-    public void setCarType(CarType.CarClass carType) {
-        this.carType = carType;
-    }
-
-    public Driver getDriver() {
-        return driver;
-    }
-
-
-    public Money getPrice() {
-        return price;
-    }
-
-    //just for testing
-    public void setPrice(Money price) {
-        this.price = price;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public Instant getCompleteAt() {
-        return completeAt;
-    }
-
     private Instant completeAt;
+
+    public Transit() {
+    }
+
+    public Transit(Address from,
+                   Address to,
+                   Client client,
+                   CarType.CarClass carClass,
+                   Instant date,
+                   Distance km) {
+        this.client = client;
+        this.from = from;
+        this.to = to;
+        this.carType = carClass;
+        this.status = Status.DRAFT;
+        this.tariff = Tariff.ofTime(date.atZone(ZoneId.systemDefault()).toLocalDateTime());
+        this.dateTime = date;
+        this.km = km.toKmInFloat();
+        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+    }
+
+    public void changePickupTo(Address newAddress, Distance newDistance, double distanceFromPreviousPickup) {
+        if (distanceFromPreviousPickup > 0.25) {
+            throw new IllegalStateException("Address 'from' cannot be changed, id = " + getId());
+        } else if (this.pickupAddressChangeCounter > 2) {
+            throw new IllegalStateException("Address 'from' cannot be changed, id = " + getId());
+        } else if (!(this.status.equals(Status.DRAFT) || (this.status.equals(Status.WAITING_FOR_DRIVER_ASSIGNMENT)))) {
+            throw new IllegalStateException("Address 'from' cannot be changed, id = " + getId());
+        }
+
+        this.from = newAddress;
+        this.km = newDistance.toKmInFloat();
+        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.pickupAddressChangeCounter++;
+    }
+
+    public void changeDestinationTo(Address newAddress, Distance newDistance) {
+        if (status.equals(Transit.Status.COMPLETED)) {
+            throw new IllegalStateException("Address 'to' cannot be changed, id = " + getId());
+        }
+
+        this.to = newAddress;
+        this.km = newDistance.toKmInFloat();
+        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+    }
+
+    public boolean canCancel() {
+        if (!EnumSet.of(Transit.Status.DRAFT, Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT, Transit.Status.TRANSIT_TO_PASSENGER).contains(this.status)) {
+            throw new IllegalStateException("Transit cannot be cancelled, id = " + getId());
+        }
+        return true;
+    }
+
+    public void cancel() {
+        this.status = Status.CANCELLED;
+        this.driver = null;
+        this.km = Distance.ZERO.toKmInFloat();
+        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.price = null;
+        this.awaitingDriversResponses = 0;
+    }
+
+    public void publishAt(Instant date) {
+        this.status = Status.WAITING_FOR_DRIVER_ASSIGNMENT;
+        this.published = date;
+    }
+
+    public boolean shouldNotWaitForDriverAnyMore(Instant date) {
+        return this.published.plus(300, ChronoUnit.SECONDS).isBefore(date) || this.status.equals(Transit.Status.CANCELLED);
+    }
+
+    public void failDriverAssignment() {
+        this.status = Status.DRIVER_ASSIGNMENT_FAILED;
+        this.driver = null;
+        this.km = Distance.ZERO.toKmInFloat();
+        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.awaitingDriversResponses = 0;
+    }
+
+    public boolean canProposeTo(Driver driver) {
+        return !this.driversRejections.contains(driver);
+    }
+
+    public void proposeTo(Driver driver) {
+        this.proposedDrivers.add(driver);
+        this.awaitingDriversResponses++;
+    }
+
+    public void acceptBy(Driver driver, Instant date) {
+        if (this.driver != null) {
+            throw new IllegalStateException("Transit already accepted, id = " + getId());
+        }
+        if (!this.proposedDrivers.contains(driver)) {
+            throw new IllegalStateException("Driver out of possible drivers, id = " + getId());
+        }
+        if (this.driversRejections.contains(driver)) {
+            throw new IllegalStateException("Driver out of possible drivers, id = " + getId());
+        }
+
+        this.driver = driver;
+        this.awaitingDriversResponses = 0;
+        this.acceptedAt = date;
+        this.status = Status.TRANSIT_TO_PASSENGER;
+    }
+
+    public void startAt(Instant date) {
+        if (!this.status.equals(Transit.Status.TRANSIT_TO_PASSENGER)) {
+            throw new IllegalStateException("Transit cannot be started, id = " + getId());
+        }
+
+        this.status = Status.IN_TRANSIT;
+        this.started = date;
+    }
+
+    public void rejectBy(Driver driver) {
+        this.driversRejections.add(driver);
+        this.awaitingDriversResponses--;
+    }
+
+    public void completeAt(Instant date, Address destinationAddress, Distance distance) {
+        if (!this.status.equals(Transit.Status.IN_TRANSIT)) {
+            throw new IllegalArgumentException("Cannot complete Transit, id = " + getId());
+        }
+
+        Money price = this.tariff.calculateCost(ofKm(this.km));
+        this.to = destinationAddress;
+        this.km = distance.toKmInFloat();
+        this.estimatedPrice = price;
+        this.status = Status.COMPLETED;
+        this.price = price;
+        this.completeAt = date;
+    }
+
+    public CarType.CarClass getCarType() {
+        return carType;
+    }
 
     public Money estimateCost() {
         if (status.equals(Status.COMPLETED)) {
@@ -142,14 +242,6 @@ public class Transit extends BaseEntity {
         this.price = null;
 
         return estimatedPrice;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
     }
 
     public Money calculateFinalCosts() {
@@ -166,9 +258,24 @@ public class Transit extends BaseEntity {
         return money;
     }
 
-    public void setDateTime(Instant dateTime) {
-        this.tariff = Tariff.ofTime(dateTime.atZone(ZoneId.systemDefault()).toLocalDateTime());
-        this.dateTime = dateTime;
+    public Driver getDriver() {
+        return driver;
+    }
+
+    public Money getPrice() {
+        return price;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Instant getCompleteAt() {
+        return completeAt;
+    }
+
+    public Client getClient() {
+        return client;
     }
 
     public Instant getDateTime() {
@@ -179,85 +286,56 @@ public class Transit extends BaseEntity {
         return published;
     }
 
-    public void setPublished(Instant published) {
-        this.published = published;
-    }
-
-    public void setDriver(Driver driver) {
-        this.driver = driver;
-    }
-
     public Distance getKm() {
         return Distance.ofKm(km);
-    }
-
-    public void setKm(Distance km) {
-        this.km = km.toKmInFloat();
-        estimateCost();
     }
 
     public Integer getAwaitingDriversResponses() {
         return awaitingDriversResponses;
     }
 
-    public void setAwaitingDriversResponses(Integer proposedDriversCounter) {
-        this.awaitingDriversResponses = proposedDriversCounter;
-    }
-
     public Set<Driver> getDriversRejections() {
         return driversRejections;
-    }
-
-    public void setDriversRejections(Set<Driver> driversRejections) {
-        this.driversRejections = driversRejections;
     }
 
     public Set<Driver> getProposedDrivers() {
         return proposedDrivers;
     }
 
-    public void setProposedDrivers(Set<Driver> proposedDrivers) {
-        this.proposedDrivers = proposedDrivers;
-    }
-
     public Instant getAcceptedAt() {
         return acceptedAt;
-    }
-
-    public void setAcceptedAt(Instant acceptedAt) {
-        this.acceptedAt = acceptedAt;
     }
 
     public Instant getStarted() {
         return started;
     }
 
-    public void setStarted(Instant started) {
-        this.started = started;
-    }
-
     public Address getFrom() {
         return from;
-    }
-
-    public void setFrom(Address from) {
-        this.from = from;
     }
 
     public Address getTo() {
         return to;
     }
 
-    public void setTo(Address to) {
-        this.to = to;
-    }
-
     public Integer getPickupAddressChangeCounter() {
         return pickupAddressChangeCounter;
     }
 
-    public void setPickupAddressChangeCounter(Integer pickupChanges) {
-        this.pickupAddressChangeCounter = pickupChanges;
+    public Money getDriversFee() {
+        return driversFee;
+    }
+
+    public Money getEstimatedPrice() {
+        return estimatedPrice;
+    }
+
+    public Tariff getTariff() {
+        return tariff;
+    }
+
+    public void setDriversFee(Money driversFee) {
+        this.driversFee = driversFee;
     }
 
     @Override
@@ -271,25 +349,5 @@ public class Transit extends BaseEntity {
 
         return this.getId() != null &&
                 this.getId().equals(other.getId());
-    }
-
-    public void completeAt(Instant when) {
-        this.completeAt = when;
-    }
-
-    public Money getDriversFee() {
-        return driversFee;
-    }
-
-    public void setDriversFee(Money driversFee) {
-        this.driversFee = driversFee;
-    }
-
-    public Money getEstimatedPrice() {
-        return estimatedPrice;
-    }
-
-    public Tariff getTariff() {
-        return tariff;
     }
 }

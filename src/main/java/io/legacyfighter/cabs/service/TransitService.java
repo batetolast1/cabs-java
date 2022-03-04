@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -87,20 +86,13 @@ public class TransitService {
             throw new IllegalArgumentException("Client does not exist, id = " + clientId);
         }
 
-        Transit transit = new Transit();
-
         // FIXME later: add some exceptions handling
         double[] geoFrom = geocodingService.geocodeAddress(from);
         double[] geoTo = geocodingService.geocodeAddress(to);
+        Distance km = Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
+        Instant now = Instant.now(clock);
 
-        transit.setClient(client);
-        transit.setFrom(from);
-        transit.setTo(to);
-        transit.setCarType(carClass);
-        transit.setStatus(Transit.Status.DRAFT);
-        transit.setDateTime(Instant.now(clock));
-        transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1])));
-
+        Transit transit = new Transit(from, to, client, carClass, now, km);
         return transitRepository.save(transit);
     }
 
@@ -139,17 +131,10 @@ public class TransitService {
         double r = 6371;
 
         // calculate the result
-        double distanceInKMeters = c * r;
+        double distanceFromPreviousPickup = c * r;
+        Distance newDistance = Distance.ofKm((float) distanceCalculator.calculateByMap(geoFromNew[0], geoFromNew[1], geoFromOld[0], geoFromOld[1]));
 
-        if (!(transit.getStatus().equals(Transit.Status.DRAFT) || (transit.getStatus().equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT))) ||
-                (transit.getPickupAddressChangeCounter() > 2) ||
-                (distanceInKMeters > 0.25)) {
-            throw new IllegalStateException("Address 'from' cannot be changed, id = " + transitId);
-        }
-
-        transit.setFrom(newAddress);
-        transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFromNew[0], geoFromNew[1], geoFromOld[0], geoFromOld[1])));
-        transit.setPickupAddressChangeCounter(transit.getPickupAddressChangeCounter() + 1);
+        transit.changePickupTo(newAddress, newDistance, distanceFromPreviousPickup);
         transitRepository.save(transit);
 
         for (Driver driver : transit.getProposedDrivers()) {
@@ -176,16 +161,12 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        if (transit.getStatus().equals(Transit.Status.COMPLETED)) {
-            throw new IllegalStateException("Address 'to' cannot be changed, id = " + transitId);
-        }
-
         // FIXME later: add some exceptions handling
         double[] geoFrom = geocodingService.geocodeAddress(transit.getFrom());
         double[] geoTo = geocodingService.geocodeAddress(newAddress);
+        Distance newDistance = Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
 
-        transit.setTo(newAddress);
-        transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1])));
+        transit.changeDestinationTo(newAddress, newDistance);
 
         if (transit.getDriver() != null) {
             notificationService.notifyAboutChangedTransitAddress(transit.getDriver().getId(), transitId);
@@ -200,19 +181,14 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        if (!EnumSet.of(Transit.Status.DRAFT, Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT, Transit.Status.TRANSIT_TO_PASSENGER).contains(transit.getStatus())) {
-            throw new IllegalStateException("Transit cannot be cancelled, id = " + transitId);
-        }
+        if (transit.canCancel()) {
+            if (transit.getDriver() != null) {
+                notificationService.notifyAboutCancelledTransit(transit.getDriver().getId(), transitId);
+            }
 
-        if (transit.getDriver() != null) {
-            notificationService.notifyAboutCancelledTransit(transit.getDriver().getId(), transitId);
+            transit.cancel();
+            transitRepository.save(transit);
         }
-
-        transit.setStatus(Transit.Status.CANCELLED);
-        transit.setDriver(null);
-        transit.setKm(Distance.ZERO);
-        transit.setAwaitingDriversResponses(0);
-        transitRepository.save(transit);
     }
 
     @Transactional
@@ -223,8 +199,9 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        transit.setStatus(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT);
-        transit.setPublished(Instant.now(clock));
+        Instant now = Instant.now(clock);
+
+        transit.publishAt(now);
         transitRepository.save(transit);
 
         return findDriversForTransit(transitId);
@@ -253,17 +230,9 @@ public class TransitService {
                     distanceToCheck++;
 
                     // FIXME: to refactor when the final business logic will be determined
-                    if ((transit.getPublished().plus(300, ChronoUnit.SECONDS).isBefore(Instant.now(clock)))
-                            ||
-                            (distanceToCheck >= 20)
-                            ||
-                            // Should it be here? How is it even possible due to previous status check above loop?
-                            (transit.getStatus().equals(Transit.Status.CANCELLED))
-                    ) {
-                        transit.setStatus(Transit.Status.DRIVER_ASSIGNMENT_FAILED);
-                        transit.setDriver(null);
-                        transit.setKm(Distance.ZERO);
-                        transit.setAwaitingDriversResponses(0);
+                    Instant now = Instant.now(clock);
+                    if (transit.shouldNotWaitForDriverAnyMore(now) || (distanceToCheck >= 20)) {
+                        transit.failDriverAssignment();
                         transitRepository.save(transit);
                         return transit;
                     }
@@ -345,10 +314,8 @@ public class TransitService {
                             if (driver.getStatus().equals(Driver.Status.ACTIVE) &&
 
                                     driver.getOccupied() == false) {
-                                if (!transit.getDriversRejections()
-                                        .contains(driver)) {
-                                    transit.getProposedDrivers().add(driver);
-                                    transit.setAwaitingDriversResponses(transit.getAwaitingDriversResponses() + 1);
+                                if (transit.canProposeTo(driver)) {
+                                    transit.proposeTo(driver);
                                     notificationService.notifyAboutPossibleTransit(driver.getId(), transitId);
                                 }
                             } else {
@@ -378,33 +345,21 @@ public class TransitService {
 
         if (driver == null) {
             throw new IllegalArgumentException("Driver does not exist, id = " + driverId);
-        } else {
-            Transit transit = transitRepository.getOne(transitId);
-
-            if (transit == null) {
-                throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
-            } else {
-                if (transit.getDriver() != null) {
-                    throw new IllegalStateException("Transit already accepted, id = " + transitId);
-                } else {
-                    if (!transit.getProposedDrivers().contains(driver)) {
-                        throw new IllegalStateException("Driver out of possible drivers, id = " + transitId);
-                    } else {
-                        if (transit.getDriversRejections().contains(driver)) {
-                            throw new IllegalStateException("Driver out of possible drivers, id = " + transitId);
-                        } else {
-                            transit.setDriver(driver);
-                            transit.setAwaitingDriversResponses(0);
-                            transit.setAcceptedAt(Instant.now(clock));
-                            transit.setStatus(Transit.Status.TRANSIT_TO_PASSENGER);
-                            transitRepository.save(transit);
-                            driver.setOccupied(true);
-                            driverRepository.save(driver);
-                        }
-                    }
-                }
-            }
         }
+
+        Transit transit = transitRepository.getOne(transitId);
+
+        if (transit == null) {
+            throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
+        }
+
+        Instant now = Instant.now(clock);
+
+        transit.acceptBy(driver, now);
+        transitRepository.save(transit);
+
+        driver.setOccupied(true);
+        driverRepository.save(driver);
     }
 
     @Transactional
@@ -421,12 +376,9 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        if (!transit.getStatus().equals(Transit.Status.TRANSIT_TO_PASSENGER)) {
-            throw new IllegalStateException("Transit cannot be started, id = " + transitId);
-        }
+        Instant now = Instant.now();
+        transit.startAt(now);
 
-        transit.setStatus(Transit.Status.IN_TRANSIT);
-        transit.setStarted(Instant.now());
         transitRepository.save(transit);
     }
 
@@ -444,8 +396,7 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        transit.getDriversRejections().add(driver);
-        transit.setAwaitingDriversResponses(transit.getAwaitingDriversResponses() - 1);
+        transit.rejectBy(driver);
         transitRepository.save(transit);
     }
 
@@ -469,26 +420,22 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        if (transit.getStatus().equals(Transit.Status.IN_TRANSIT)) {
-            // FIXME later: add some exceptions handling
-            double[] geoFrom = geocodingService.geocodeAddress(transit.getFrom());
-            double[] geoTo = geocodingService.geocodeAddress(transit.getTo());
+        // FIXME later: add some exceptions handling
+        double[] geoFrom = geocodingService.geocodeAddress(transit.getFrom());
+        double[] geoTo = geocodingService.geocodeAddress(transit.getTo());
 
-            transit.setTo(destinationAddress);
-            transit.setKm(Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1])));
-            transit.setStatus(Transit.Status.COMPLETED);
-            transit.calculateFinalCosts();
-            driver.setOccupied(false);
-            transit.completeAt(Instant.now(clock));
-            Money driverFee = driverFeeService.calculateDriverFee(transitId);
-            transit.setDriversFee(driverFee);
-            driverRepository.save(driver);
-            awardsService.registerMiles(transit.getClient().getId(), transitId);
-            transitRepository.save(transit);
-            invoiceGenerator.generate(transit.getPrice().toInt(), transit.getClient().getName() + " " + transit.getClient().getLastName());
-        } else {
-            throw new IllegalArgumentException("Cannot complete Transit, id = " + transitId);
-        }
+        Distance distance = Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
+        Instant now = Instant.now(clock);
+
+        transit.completeAt(now, destinationAddress, distance);
+
+        driver.setOccupied(false);
+        Money driverFee = driverFeeService.calculateDriverFee(transitId);
+        transit.setDriversFee(driverFee);
+        driverRepository.save(driver);
+        awardsService.registerMiles(transit.getClient().getId(), transitId);
+        transitRepository.save(transit);
+        invoiceGenerator.generate(transit.getPrice().toInt(), transit.getClient().getName() + " " + transit.getClient().getLastName());
     }
 
     @Transactional

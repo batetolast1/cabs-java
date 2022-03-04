@@ -15,6 +15,7 @@ import io.legacyfighter.cabs.service.DriverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -40,14 +41,14 @@ public class Fixtures {
     CarTypeService carTypeService;
 
     public void aTransit(Driver driver, LocalDateTime dateTime) {
-        Transit transit = new Transit();
-        transit.setDateTime(dateTime.toInstant(OffsetDateTime.now().getOffset()));
-        transit.setDriver(driver);
-        transit.setStatus(Transit.Status.DRAFT);
-        transit.setKm(Distance.ofKm(10.0f));
-        transit.setStatus(Transit.Status.COMPLETED);
-        transit.setPrice(transit.calculateFinalCosts());
-
+        Instant instant = dateTime.toInstant(OffsetDateTime.now().getOffset());
+        Distance km = Distance.ofKm(10.0f);
+        Transit transit = new Transit(null, null, null, null, instant, km);
+        transitRepository.save(transit);
+        transit.proposeTo(driver);
+        transit.acceptBy(driver, instant);
+        transit.startAt(instant);
+        transit.completeAt(instant, null, km);
         transitRepository.save(transit);
     }
 
