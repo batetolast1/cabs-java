@@ -40,7 +40,7 @@ public class Fixtures {
     @Autowired
     CarTypeService carTypeService;
 
-    public void aTransit(Driver driver, LocalDateTime dateTime) {
+    public Transit aTransit(Driver driver, LocalDateTime dateTime) {
         Instant instant = dateTime.toInstant(OffsetDateTime.now().getOffset());
         Distance km = Distance.ofKm(10.0f);
         Transit transit = new Transit(null, null, null, null, instant, km);
@@ -50,6 +50,7 @@ public class Fixtures {
         transit.startAt(instant);
         transit.completeAt(instant, null, km);
         transitRepository.save(transit);
+        return transit;
     }
 
     public void driverHasFee(Driver driver, DriverFee.FeeType feeType, int amount, Money minimumFee) {

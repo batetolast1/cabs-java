@@ -6,7 +6,6 @@ import io.legacyfighter.cabs.service.DriverService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static io.legacyfighter.cabs.entity.Driver.Status.ACTIVE;
 import static io.legacyfighter.cabs.entity.Driver.Status.INACTIVE;
@@ -15,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 @SpringBootTest
-@Transactional
 class ValidateDriverLicenseIntegrationTest {
 
     @Autowired
