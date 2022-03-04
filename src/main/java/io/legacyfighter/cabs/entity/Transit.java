@@ -220,12 +220,12 @@ public class Transit extends BaseEntity {
             throw new IllegalArgumentException("Cannot complete Transit, id = " + getId());
         }
 
-        Money price = this.tariff.calculateCost(ofKm(this.km));
+        Money money = this.tariff.calculateCost(ofKm(this.km));
         this.to = destinationAddress;
         this.km = distance.toKmInFloat();
-        this.estimatedPrice = price;
+        this.estimatedPrice = money;
         this.status = Status.COMPLETED;
-        this.price = price;
+        this.price = money;
         this.completeAt = date;
     }
 
