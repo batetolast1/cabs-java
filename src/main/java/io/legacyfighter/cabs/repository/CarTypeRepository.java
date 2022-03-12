@@ -36,7 +36,7 @@ public class CarTypeRepository {
         return carTypeEntityRepository.findByStatus(status);
     }
 
-    public CarType save(CarType carType) {
+    public CarType create(CarType carType) {
         carTypeActiveCounterRepository.save(new CarTypeActiveCounter(carType.getCarClass()));
         return carTypeEntityRepository.save(carType);
     }
@@ -71,12 +71,16 @@ interface CarTypeActiveCounterRepository extends CrudRepository<CarTypeActiveCou
     CarTypeActiveCounter findByCarClass(CarType.CarClass carClass);
 
     @Modifying
-    @Query(value = "UPDATE car_type_active_counter counter SET active_cars_counter = active_cars_counter + 1 where counter.car_class = :#{#carClass.name()}",
+    @Query(value = "UPDATE car_type_active_counter counter " +
+            "SET active_cars_counter = active_cars_counter + 1 " +
+            "WHERE counter.car_class = :#{#carClass.name()}",
             nativeQuery = true)
     int incrementCounter(@Param("carClass") CarType.CarClass carClass);
 
     @Modifying
-    @Query(value = "UPDATE car_type_active_counter counter SET active_cars_counter = active_cars_counter - 1 where counter.car_class = :#{#carClass.name()}",
+    @Query(value = "UPDATE car_type_active_counter counter " +
+            "SET active_cars_counter = active_cars_counter - 1 " +
+            "WHERE counter.car_class = :#{#carClass.name()}",
             nativeQuery = true)
     int decrementCounter(CarType.CarClass carClass);
 }

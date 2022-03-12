@@ -45,7 +45,7 @@ public class CarTypeService {
         CarType byCarClass = carTypeRepository.findByCarClass(carTypeDTO.getCarClass());
         if (byCarClass == null) {
             CarType type = new CarType(carTypeDTO.getCarClass(), carTypeDTO.getDescription(), getMinNumberOfCars(carTypeDTO.getCarClass()));
-            return carTypeRepository.save(type);
+            return carTypeRepository.create(type);
         } else {
             byCarClass.setDescription(carTypeDTO.getDescription());
             return carTypeRepository.findByCarClass(carTypeDTO.getCarClass());
