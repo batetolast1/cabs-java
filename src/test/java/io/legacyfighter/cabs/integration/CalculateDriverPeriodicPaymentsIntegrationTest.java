@@ -30,12 +30,12 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         // given
         Driver driver = fixtures.aDriver();
         //and
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 5, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 10, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 15, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 20, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 25, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 30, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 5, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 10, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 15, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 20, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 25, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 30, 14, 0));
         // and
         fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 100, new Money(0));
 
@@ -51,16 +51,16 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         // given
         Driver driver = fixtures.aDriver();
         // and
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 5, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 10, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 15, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 20, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 25, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.APRIL, 30, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 5, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 10, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 15, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 20, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 25, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.APRIL, 30, 14, 0));
         // and
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 5, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 15, 14, 0));
-        fixtures.aTransit(driver, LocalDateTime.of(2022, Month.OCTOBER, 25, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.OCTOBER, 5, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.OCTOBER, 15, 14, 0));
+        fixtures.aCompletedTransitAt(driver, LocalDateTime.of(2022, Month.OCTOBER, 25, 14, 0));
         // and
         fixtures.driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 50, new Money(10));
 

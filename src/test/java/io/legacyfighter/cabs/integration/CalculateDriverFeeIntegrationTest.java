@@ -31,7 +31,7 @@ class CalculateDriverFeeIntegrationTest {
         // and
         LocalDateTime dateTime = LocalDateTime.of(2022, Month.FEBRUARY, 20, 6, 0);
         // and
-        Transit transit = fixtures.aTransit(driver, dateTime);
+        Transit transit = fixtures.aCompletedTransitAt(driver, dateTime);
         // and
         fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 50, Money.ZERO);
 
@@ -49,7 +49,7 @@ class CalculateDriverFeeIntegrationTest {
         // and
         LocalDateTime dateTime = LocalDateTime.of(2022, Month.FEBRUARY, 20, 6, 0);
         // and
-        Transit transit = fixtures.aTransit(driver, dateTime);
+        Transit transit = fixtures.aCompletedTransitAt(driver, dateTime);
         // and
         fixtures.driverHasFee(driver, DriverFee.FeeType.PERCENTAGE, 50, Money.ZERO);
 
@@ -67,7 +67,7 @@ class CalculateDriverFeeIntegrationTest {
         // and
         LocalDateTime dateTime = LocalDateTime.of(2022, Month.FEBRUARY, 20, 6, 0);
         // and
-        Transit transit = fixtures.aTransit(driver, dateTime);
+        Transit transit = fixtures.aCompletedTransitAt(driver, dateTime);
         // and
         Money minimumFee = new Money(100);
         // and
