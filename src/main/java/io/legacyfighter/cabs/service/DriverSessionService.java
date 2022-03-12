@@ -4,7 +4,6 @@ import io.legacyfighter.cabs.entity.CarType;
 import io.legacyfighter.cabs.entity.DriverSession;
 import io.legacyfighter.cabs.repository.DriverRepository;
 import io.legacyfighter.cabs.repository.DriverSessionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,17 +14,20 @@ import java.util.List;
 @Service
 public class DriverSessionService {
 
-    @Autowired
-    private DriverRepository driverRepository;
+    private final DriverRepository driverRepository;
 
-    @Autowired
-    private DriverSessionRepository driverSessionRepository;
+    private final DriverSessionRepository driverSessionRepository;
 
-    @Autowired
-    private CarTypeService carTypeService;
+    private final CarTypeService carTypeService;
 
-    @Autowired
-    private Clock clock;
+    private final Clock clock;
+
+    public DriverSessionService(DriverRepository driverRepository, DriverSessionRepository driverSessionRepository, CarTypeService carTypeService, Clock clock) {
+        this.driverRepository = driverRepository;
+        this.driverSessionRepository = driverSessionRepository;
+        this.carTypeService = carTypeService;
+        this.clock = clock;
+    }
 
     public DriverSession logIn(Long driverId, String plateNumber, CarType.CarClass carClass, String carBrand) {
         DriverSession session = new DriverSession();
@@ -44,7 +46,7 @@ public class DriverSessionService {
         if (session == null) {
             throw new IllegalArgumentException("Session does not exist");
         }
-        carTypeService.unregisterCar(session.getCarClass());
+        carTypeService.unregisterActiveCar(session.getCarClass());
         session.setLoggedOutAt(Instant.now(clock));
     }
 
@@ -53,9 +55,8 @@ public class DriverSessionService {
         DriverSession session = driverSessionRepository.findTopByDriverAndLoggedOutAtIsNullOrderByLoggedAtDesc(driverRepository.getOne(driverId));
         if (session != null) {
             session.setLoggedOutAt(Instant.now(clock));
-            carTypeService.unregisterCar(session.getCarClass());
+            carTypeService.unregisterActiveCar(session.getCarClass());
         }
-
     }
 
     public List<DriverSession> findByDriver(Long driverId) {
