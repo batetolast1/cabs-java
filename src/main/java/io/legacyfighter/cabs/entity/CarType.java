@@ -2,7 +2,10 @@ package io.legacyfighter.cabs.entity;
 
 import io.legacyfighter.cabs.common.BaseEntity;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 @Entity
 public class CarType extends BaseEntity {
@@ -30,9 +33,6 @@ public class CarType extends BaseEntity {
     @Column(nullable = false)
     private int minNoOfCarsToActivateClass;
 
-    @Column(nullable = false)
-    private int activeCarsCounter;
-
     public CarType(CarClass carClass, String description, int minNoOfCarsToActivateClass) {
         this.carClass = carClass;
         this.description = description;
@@ -40,14 +40,6 @@ public class CarType extends BaseEntity {
     }
 
     public CarType() {
-    }
-
-    public void registerActiveCar() {
-        activeCarsCounter++;
-    }
-
-    public void unregisterActiveCar() {
-        activeCarsCounter--;
     }
 
     public void registerCar() {
@@ -96,10 +88,6 @@ public class CarType extends BaseEntity {
         return carsCounter;
     }
 
-    public int getActiveCarsCounter() {
-        return activeCarsCounter;
-    }
-
     public int getMinNoOfCarsToActivateClass() {
         return minNoOfCarsToActivateClass;
     }
@@ -117,5 +105,3 @@ public class CarType extends BaseEntity {
                 this.getId().equals(other.getId());
     }
 }
-
-

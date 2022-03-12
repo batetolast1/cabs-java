@@ -5,7 +5,6 @@ import io.legacyfighter.cabs.dto.CarTypeDTO;
 import io.legacyfighter.cabs.entity.CarType;
 import io.legacyfighter.cabs.entity.CarType.CarClass;
 import io.legacyfighter.cabs.repository.CarTypeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +14,15 @@ import java.util.stream.Collectors;
 @Service
 public class CarTypeService {
 
-    @Autowired
-    private CarTypeRepository carTypeRepository;
+    private final CarTypeRepository carTypeRepository;
 
-    @Autowired
-    private AppProperties appProperties;
+    private final AppProperties appProperties;
+
+    public CarTypeService(CarTypeRepository carTypeRepository,
+                          AppProperties appProperties) {
+        this.carTypeRepository = carTypeRepository;
+        this.appProperties = appProperties;
+    }
 
     @Transactional
     public CarType load(Long id) {
@@ -32,7 +35,9 @@ public class CarTypeService {
 
     @Transactional
     public CarTypeDTO loadDto(Long id) {
-        return new CarTypeDTO(load(id));
+        CarType loaded = load(id);
+        int activeCarsCounter = carTypeRepository.findActiveCounter(loaded.getCarClass()).getActiveCarsCounter();
+        return new CarTypeDTO(loaded, activeCarsCounter);
     }
 
     @Transactional
@@ -43,7 +48,7 @@ public class CarTypeService {
             return carTypeRepository.save(type);
         } else {
             byCarClass.setDescription(carTypeDTO.getDescription());
-            return byCarClass;
+            return carTypeRepository.findByCarClass(carTypeDTO.getCarClass());
         }
     }
 
@@ -73,14 +78,12 @@ public class CarTypeService {
 
     @Transactional
     public void unregisterActiveCar(CarClass carClass) {
-        CarType carType = findByCarClass(carClass);
-        carType.unregisterActiveCar();
+        carTypeRepository.decrementCounter(carClass);
     }
 
     @Transactional
     public void registerActiveCar(CarClass carClass) {
-        CarType carType = findByCarClass(carClass);
-        carType.registerActiveCar();
+        carTypeRepository.incrementCounter(carClass);
     }
 
     @Transactional
@@ -98,7 +101,6 @@ public class CarTypeService {
             return 10;
         }
     }
-
 
     @Transactional
     public void removeCarType(CarClass carClass) {

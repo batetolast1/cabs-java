@@ -4,21 +4,22 @@ import io.legacyfighter.cabs.dto.CarTypeDTO;
 import io.legacyfighter.cabs.dto.ClaimDTO;
 import io.legacyfighter.cabs.entity.CarType;
 import io.legacyfighter.cabs.service.CarTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class CarTypeController {
 
-    @Autowired
-    private CarTypeService carTypeService;
+    private final CarTypeService carTypeService;
 
+    public CarTypeController(CarTypeService carTypeService) {
+        this.carTypeService = carTypeService;
+    }
 
     @PostMapping("/cartypes")
     ResponseEntity<CarTypeDTO> create(@RequestBody CarTypeDTO carTypeDTO) {
         CarType created = carTypeService.create(carTypeDTO);
-        return ResponseEntity.ok(new CarTypeDTO(created));
+        return ResponseEntity.ok(carTypeService.loadDto(created.getId()));
     }
 
     @PostMapping("/cartypes/{carClass}/registerCar")

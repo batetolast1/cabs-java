@@ -57,7 +57,7 @@ class CarTypeUpdateIntegrationTest {
         int currentActiveCarsCount = load(created.getId()).getActiveCarsCounter();
 
         // when
-        carTypeService.registerActiveCar(VAN);
+        registerActiveCar(VAN);
 
         // then
         CarTypeDTO loaded = carTypeService.loadDto(created.getId());
@@ -74,7 +74,7 @@ class CarTypeUpdateIntegrationTest {
         int currentActiveCarsCount = load(created.getId()).getActiveCarsCounter();
 
         // when
-        carTypeService.unregisterActiveCar(VAN);
+        unregisterActiveCar(VAN);
 
         // then
         CarTypeDTO loaded = carTypeService.loadDto(created.getId());
@@ -99,5 +99,13 @@ class CarTypeUpdateIntegrationTest {
 
     private void registerActiveCar() {
         carTypeService.registerActiveCar(VAN);
+    }
+
+    private void registerActiveCar(CarType.CarClass carClass) {
+        carTypeService.registerActiveCar(carClass);
+    }
+
+    private void unregisterActiveCar(CarType.CarClass carClass) {
+        carTypeService.unregisterActiveCar(carClass);
     }
 }
