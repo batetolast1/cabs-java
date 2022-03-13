@@ -4,20 +4,27 @@ import io.legacyfighter.cabs.common.BaseEntity;
 
 import javax.persistence.*;
 import java.time.Instant;
+import java.util.Objects;
+
+import static io.legacyfighter.cabs.entity.Claim.CompletionMode.AUTOMATIC;
+import static io.legacyfighter.cabs.entity.Claim.CompletionMode.MANUAL;
+import static io.legacyfighter.cabs.entity.Claim.Status.ESCALATED;
+import static io.legacyfighter.cabs.entity.Claim.Status.REFUNDED;
 
 @Entity
 public class Claim extends BaseEntity {
 
     public enum Status {
+
         DRAFT, NEW, IN_PROCESS, REFUNDED, ESCALATED, REJECTED
     }
 
     public enum CompletionMode {
+
         MANUAL, AUTOMATIC
     }
 
     public Claim() {
-
     }
 
     @ManyToOne
@@ -55,7 +62,6 @@ public class Claim extends BaseEntity {
     public void setClaimNo(String claimNo) {
         this.claimNo = claimNo;
     }
-
 
     public Client getOwner() {
         return owner;
@@ -129,6 +135,20 @@ public class Claim extends BaseEntity {
         this.reason = reason;
     }
 
+    public void escalate() {
+        this.setStatus(ESCALATED);
+        this.setCompletionMode(MANUAL);
+        this.setCompletionDate(Instant.now());
+        this.setChangeDate(Instant.now());
+    }
+
+    public void refund() {
+        this.setStatus(REFUNDED);
+        this.setCompletionMode(AUTOMATIC);
+        this.setCompletionDate(Instant.now());
+        this.setChangeDate(Instant.now());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -142,4 +162,8 @@ public class Claim extends BaseEntity {
                 this.getId().equals(other.getId());
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), owner, transit, creationDate, completionDate, changeDate, reason, incidentDescription, completionMode, status, claimNo);
+    }
 }

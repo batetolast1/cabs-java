@@ -16,7 +16,12 @@ public class ClaimsResolver extends BaseEntity {
 
     public enum WhoToAsk {
 
-        ASK_DRIVER, ASK_CLIENT, ASK_NO_ONE;
+        ASK_DRIVER, ASK_CLIENT, ASK_NO_ONE
+    }
+
+    public enum AwardedMiles {
+
+        NO_MILES, EXTRA_MILES
     }
 
     private Long clientId;
@@ -31,33 +36,33 @@ public class ClaimsResolver extends BaseEntity {
     }
 
     public Result resolve(Claim claim,
-                          int automaticRefundForVipThreshold,
                           int numberOfTransits,
+                          int automaticRefundForVipThreshold,
                           int numberOfTransitsForClaimAutomaticRefund) {
         if (getClaimedTransitIds().contains(claim.getTransit().getId())) {
-            return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.ESCALATED);
+            return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.ESCALATED, AwardedMiles.NO_MILES);
         }
 
         addNewClaimFor(claim.getTransit());
 
         if (numberOfClaims() <= 3) {
-            return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.REFUNDED);
+            return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.REFUNDED, AwardedMiles.NO_MILES);
         }
         if (claim.getOwner().getType().equals(Client.Type.VIP)) {
             if (claim.getTransit().getPrice().toInt() < automaticRefundForVipThreshold) {
-                return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.REFUNDED);
+                return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.REFUNDED, AwardedMiles.EXTRA_MILES);
             } else {
-                return new Result(WhoToAsk.ASK_DRIVER, Claim.Status.ESCALATED);
+                return new Result(WhoToAsk.ASK_DRIVER, Claim.Status.ESCALATED, AwardedMiles.NO_MILES);
             }
         } else {
             if (numberOfTransits >= numberOfTransitsForClaimAutomaticRefund) {
                 if (claim.getTransit().getPrice().toInt() < automaticRefundForVipThreshold) {
-                    return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.REFUNDED);
+                    return new Result(WhoToAsk.ASK_NO_ONE, Claim.Status.REFUNDED, AwardedMiles.NO_MILES);
                 } else {
-                    return new Result(WhoToAsk.ASK_CLIENT, Claim.Status.ESCALATED);
+                    return new Result(WhoToAsk.ASK_CLIENT, Claim.Status.ESCALATED, AwardedMiles.NO_MILES);
                 }
             } else {
-                return new Result(WhoToAsk.ASK_DRIVER, Claim.Status.ESCALATED);
+                return new Result(WhoToAsk.ASK_DRIVER, Claim.Status.ESCALATED, AwardedMiles.NO_MILES);
             }
         }
     }
@@ -80,10 +85,14 @@ public class ClaimsResolver extends BaseEntity {
 
         private final WhoToAsk whoToAsk;
         private final Claim.Status decision;
+        private final AwardedMiles awardedMiles;
 
-        public Result(WhoToAsk whoToAsk, Claim.Status decision) {
+        public Result(WhoToAsk whoToAsk,
+                      Claim.Status decision,
+                      AwardedMiles awardedMiles) {
             this.whoToAsk = whoToAsk;
             this.decision = decision;
+            this.awardedMiles = awardedMiles;
         }
 
         public WhoToAsk getWhoToAsk() {
@@ -92,6 +101,10 @@ public class ClaimsResolver extends BaseEntity {
 
         public Claim.Status getDecision() {
             return decision;
+        }
+
+        public AwardedMiles getAwardedMiles() {
+            return awardedMiles;
         }
 
         @Override

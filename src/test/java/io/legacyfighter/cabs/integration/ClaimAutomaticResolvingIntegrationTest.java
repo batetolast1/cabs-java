@@ -112,7 +112,7 @@ class ClaimAutomaticResolvingIntegrationTest {
 
         assertThat(claimResult4.getStatus()).isEqualTo(Claim.Status.ESCALATED);
         assertThat(claimResult4.getCompletionMode()).isEqualTo(Claim.CompletionMode.MANUAL);
-        verify(driverNotificationService, times(1)).askDriverForDetailsAboutClaim(claim4.getClaimNo(), client.getId());
+        verify(driverNotificationService, times(1)).askDriverForDetailsAboutClaim(claim4.getClaimNo(), driver.getId());
 
         verifyNoInteractions(awardsService);
         verifyNoMoreInteractions(clientNotificationService, driverNotificationService);
@@ -134,14 +134,14 @@ class ClaimAutomaticResolvingIntegrationTest {
 
         // and
         Claim claim1 = fixtures.createClaim(client, transit1);
+        Claim claimResult1 = claimService.tryToResolveAutomatically(claim1.getId());
         Claim claim2 = fixtures.createClaim(client, transit2);
+        Claim claimResult2 = claimService.tryToResolveAutomatically(claim2.getId());
         Claim claim3 = fixtures.createClaim(client, transit3);
+        Claim claimResult3 = claimService.tryToResolveAutomatically(claim3.getId());
         Claim claim4 = fixtures.createClaim(client, transit4);
 
         // when
-        Claim claimResult1 = claimService.tryToResolveAutomatically(claim1.getId());
-        Claim claimResult2 = claimService.tryToResolveAutomatically(claim2.getId());
-        Claim claimResult3 = claimService.tryToResolveAutomatically(claim3.getId());
         Claim claimResult4 = claimService.tryToResolveAutomatically(claim4.getId());
 
         // then
@@ -161,7 +161,7 @@ class ClaimAutomaticResolvingIntegrationTest {
         assertThat(claimResult4.getCompletionMode()).isEqualTo(Claim.CompletionMode.AUTOMATIC);
         verify(clientNotificationService, times(1)).notifyClientAboutRefund(claim4.getClaimNo(), client.getId());
 
-        verify(awardsService, times(4)).registerSpecialMiles(client.getId(), 10);
+        verify(awardsService, times(1)).registerSpecialMiles(client.getId(), 10);
         verifyNoInteractions(driverNotificationService);
         verifyNoMoreInteractions(clientNotificationService, awardsService);
     }
