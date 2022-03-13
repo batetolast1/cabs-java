@@ -15,6 +15,9 @@ import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @deprecated use {@link io.legacyfighter.cabs.entity.CalculateTransitPriceTest}
+ */
 @SpringBootTest
 class CalculateDriverFeeIntegrationTest {
 

@@ -110,6 +110,10 @@ public class ClaimService {
 
         ClaimsResolver.Result result = claimsResolver.resolve(claim, numberOfTransitsByClient, automaticRefundForVipThreshold, numberOfTransitsForClaimAutomaticRefund);
 
+        // TODO create factory for claim process
+        // ClaimProcess process = Factory.createProcessFor(claim);
+        // process.execute(result);
+
         if (result.getDecision() == Claim.Status.REFUNDED) {
             claim.refund();
             clientNotificationService.notifyClientAboutRefund(claim.getClaimNo(), claim.getOwner().getId());
