@@ -100,6 +100,10 @@ public class Transit extends BaseEntity {
     public Transit() {
     }
 
+    public Transit(Long id) {
+        this.id = id;
+    }
+
     public Transit(Address from,
                    Address to,
                    Client client,
