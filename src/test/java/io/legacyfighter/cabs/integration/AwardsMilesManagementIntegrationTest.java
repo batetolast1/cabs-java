@@ -164,7 +164,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
         assertThat(awardedMiles.get(0).getMiles()).isEqualTo(10);
         assertThat(awardedMiles.get(0).getExpirationDate()).isEqualTo(_2022_03_14_12_00_00.plus(365, ChronoUnit.DAYS));
-        assertThat(awardedMiles.get(0).isSpecial()).isFalse();
+        assertThat(awardedMiles.get(0).cantExpire()).isFalse();
     }
 
     @Test
@@ -214,7 +214,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(differentClient);
         assertThat(awardedMiles.get(0).getMiles()).isEqualTo(10);
         assertThat(awardedMiles.get(0).getExpirationDate()).isEqualTo(_2022_03_14_12_00_00.plus(365, ChronoUnit.DAYS));
-        assertThat(awardedMiles.get(0).isSpecial()).isFalse();
+        assertThat(awardedMiles.get(0).cantExpire()).isFalse();
     }
 
     @Test
@@ -239,14 +239,14 @@ class AwardsMilesManagementIntegrationTest {
     }
 
     @Test
-    void canRegisterSpecialMiles() {
+    void canRegisterNonExpiringMiles() {
         // given
         Client client = fixtures.aClient(Client.Type.NORMAL);
         // and
         fixtures.hasActiveAwardsAccount(client);
 
         // when
-        awardsService.registerSpecialMiles(client.getId(), 10);
+        awardsService.registerNonExpiringMiles(client.getId(), 10);
 
         // then
         AwardsAccountDTO awardsAccount = awardsService.findBy(client.getId());
@@ -259,18 +259,18 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
         assertThat(awardedMiles.get(0).getMiles()).isEqualTo(10);
         assertThat(awardedMiles.get(0).getExpirationDate()).isNull();
-        assertThat(awardedMiles.get(0).isSpecial()).isTrue();
+        assertThat(awardedMiles.get(0).cantExpire()).isTrue();
     }
 
     @Test
-    void canRegisterSpecialMilesForInactiveAccount() {
+    void canRegisterNonExpiringMilesForInactiveAccount() {
         // given
         Client client = fixtures.aClient(Client.Type.NORMAL);
         // and
         fixtures.hasRegisteredAwardsAccount(client);
 
         // when
-        awardsService.registerSpecialMiles(client.getId(), 10);
+        awardsService.registerNonExpiringMiles(client.getId(), 10);
 
         // then
         AwardsAccountDTO awardsAccount = awardsService.findBy(client.getId());
@@ -283,7 +283,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
         assertThat(awardedMiles.get(0).getMiles()).isEqualTo(10);
         assertThat(awardedMiles.get(0).getExpirationDate()).isNull();
-        assertThat(awardedMiles.get(0).isSpecial()).isTrue();
+        assertThat(awardedMiles.get(0).cantExpire()).isTrue();
     }
 
     @Test
@@ -297,7 +297,7 @@ class AwardsMilesManagementIntegrationTest {
 
         // when
         awardsService.registerMiles(client.getId(), transit.getId());
-        awardsService.registerSpecialMiles(client.getId(), 20);
+        awardsService.registerNonExpiringMiles(client.getId(), 20);
         Integer miles = awardsService.calculateBalance(client.getId());
 
         // then
@@ -321,7 +321,7 @@ class AwardsMilesManagementIntegrationTest {
 
         // when
         awardsService.registerMiles(clientFrom.getId(), transit.getId());
-        awardsService.registerSpecialMiles(clientFrom.getId(), 20);
+        awardsService.registerNonExpiringMiles(clientFrom.getId(), 20);
         awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 30);
 
         // then
@@ -344,12 +344,12 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(milesByClientTo.get(0).getClient()).isEqualTo(clientTo);
         assertThat(milesByClientTo.get(0).getMiles()).isEqualTo(10);
         assertThat(milesByClientTo.get(0).getExpirationDate()).isEqualTo(_2022_03_14_12_00_00.plus(365, ChronoUnit.DAYS));
-        assertThat(milesByClientTo.get(0).isSpecial()).isFalse();
+        assertThat(milesByClientTo.get(0).cantExpire()).isFalse();
         assertThat(milesByClientTo.get(1).getDate()).isEqualTo(_2022_03_14_12_00_00);
         assertThat(milesByClientTo.get(1).getClient()).isEqualTo(clientTo);
         assertThat(milesByClientTo.get(1).getMiles()).isEqualTo(20);
         assertThat(milesByClientTo.get(1).getExpirationDate()).isNull();
-        assertThat(milesByClientTo.get(1).isSpecial()).isTrue();
+        assertThat(milesByClientTo.get(1).cantExpire()).isTrue();
     }
 
     @Test
@@ -362,7 +362,7 @@ class AwardsMilesManagementIntegrationTest {
         fixtures.hasActiveAwardsAccount(clientTo);
 
         // when
-        awardsService.registerSpecialMiles(clientFrom.getId(), 20);
+        awardsService.registerNonExpiringMiles(clientFrom.getId(), 20);
         awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 20);
 
         // then
@@ -392,7 +392,7 @@ class AwardsMilesManagementIntegrationTest {
 
         // when
         awardsService.registerMiles(clientFrom.getId(), transit.getId());
-        awardsService.registerSpecialMiles(clientFrom.getId(), 20);
+        awardsService.registerNonExpiringMiles(clientFrom.getId(), 20);
         awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 40);
 
         // then

@@ -164,7 +164,7 @@ class ClaimAutomaticResolvingIntegrationTest {
         assertThat(claimResult4.getCompletionMode()).isEqualTo(Claim.CompletionMode.AUTOMATIC);
         verify(clientNotificationService, times(1)).notifyClientAboutRefund(claim4.getClaimNo(), client.getId());
 
-        verify(awardsService, times(1)).registerSpecialMiles(client.getId(), 10);
+        verify(awardsService, times(1)).registerNonExpiringMiles(client.getId(), 10);
         verifyNoInteractions(driverNotificationService);
         verifyNoMoreInteractions(clientNotificationService, awardsService);
     }

@@ -27,7 +27,7 @@ public class AwardedMiles extends BaseEntity {
 
     private Instant expirationDate;
 
-    private Boolean isSpecial;
+    private Boolean cantExpire;
 
     @ManyToOne
     private Transit transit;
@@ -67,12 +67,12 @@ public class AwardedMiles extends BaseEntity {
         this.expirationDate = expirationDate;
     }
 
-    public Boolean isSpecial() {
-        return isSpecial;
+    public Boolean cantExpire() {
+        return cantExpire;
     }
 
-    public void setSpecial(Boolean special) {
-        isSpecial = special;
+    public void setCantExpire(Boolean cantExpire) {
+        this.cantExpire = cantExpire;
     }
 
     public void setTransit(Transit transit) {

@@ -123,7 +123,7 @@ public class ClaimService {
         }
 
         if (result.getAwardedMiles() == ClaimsResolver.AwardedMiles.EXTRA_MILES) {
-            awardsService.registerSpecialMiles(claim.getOwner().getId(), 10);
+            awardsService.registerNonExpiringMiles(claim.getOwner().getId(), 10);
         }
 
         if (result.getWhoToAsk() == ClaimsResolver.WhoToAsk.ASK_CLIENT) {
