@@ -51,11 +51,11 @@ class ClaimAutomaticResolvingIntegrationTest {
         // and
         Transit transit = fixtures.aCompletedTransitFor(driver, client, 39);
         // and
-        Claim firstClaim = fixtures.createClaim(client, transit);
+        Claim firstClaim = fixtures.aClaimFor(client, transit);
         // and
         Claim firstClaimResult = claimService.tryToResolveAutomatically(firstClaim.getId());
         // and
-        Claim secondClaim = fixtures.createClaim(client, transit);
+        Claim secondClaim = fixtures.aClaimFor(client, transit);
         // and
         clearInvocations(clientNotificationService);
 
@@ -89,13 +89,13 @@ class ClaimAutomaticResolvingIntegrationTest {
         Transit transit4 = fixtures.aCompletedTransitFor(driver, client, 39);
 
         // and
-        Claim claim1 = fixtures.createClaim(client, transit1);
+        Claim claim1 = fixtures.aClaimFor(client, transit1);
         Claim claimResult1 = claimService.tryToResolveAutomatically(claim1.getId());
-        Claim claim2 = fixtures.createClaim(client, transit2);
+        Claim claim2 = fixtures.aClaimFor(client, transit2);
         Claim claimResult2 = claimService.tryToResolveAutomatically(claim2.getId());
-        Claim claim3 = fixtures.createClaim(client, transit3);
+        Claim claim3 = fixtures.aClaimFor(client, transit3);
         Claim claimResult3 = claimService.tryToResolveAutomatically(claim3.getId());
-        Claim claim4 = fixtures.createClaim(client, transit4);
+        Claim claim4 = fixtures.aClaimFor(client, transit4);
 
         // when
         Claim claimResult4 = claimService.tryToResolveAutomatically(claim4.getId());
@@ -136,13 +136,13 @@ class ClaimAutomaticResolvingIntegrationTest {
         Transit transit4 = fixtures.aCompletedTransitFor(driver, client, 39);
 
         // and
-        Claim claim1 = fixtures.createClaim(client, transit1);
+        Claim claim1 = fixtures.aClaimFor(client, transit1);
         Claim claimResult1 = claimService.tryToResolveAutomatically(claim1.getId());
-        Claim claim2 = fixtures.createClaim(client, transit2);
+        Claim claim2 = fixtures.aClaimFor(client, transit2);
         Claim claimResult2 = claimService.tryToResolveAutomatically(claim2.getId());
-        Claim claim3 = fixtures.createClaim(client, transit3);
+        Claim claim3 = fixtures.aClaimFor(client, transit3);
         Claim claimResult3 = claimService.tryToResolveAutomatically(claim3.getId());
-        Claim claim4 = fixtures.createClaim(client, transit4);
+        Claim claim4 = fixtures.aClaimFor(client, transit4);
 
         // when
         Claim claimResult4 = claimService.tryToResolveAutomatically(claim4.getId());
@@ -180,7 +180,7 @@ class ClaimAutomaticResolvingIntegrationTest {
         // and
         Transit transit = fixtures.aCompletedTransitFor(driver, client, 41);
         // and
-        Claim claim = fixtures.createClaim(client, transit);
+        Claim claim = fixtures.aClaimFor(client, transit);
         // and
         clearInvocations(awardsService, clientNotificationService);
 
@@ -206,11 +206,11 @@ class ClaimAutomaticResolvingIntegrationTest {
         // and
         Client client = fixtures.aClientWithClaims(Client.Type.NORMAL, 3);
         // and
-        fixtures.clientHasDoneTransits(client, 2);
+        fixtures.hasDoneTransits(client, 2);
         // and
         Transit transit = fixtures.aCompletedTransitFor(driver, client, 39);
         // and
-        Claim claim = fixtures.createClaim(client, transit);
+        Claim claim = fixtures.aClaimFor(client, transit);
         // and
         clearInvocations(clientNotificationService);
 
@@ -236,11 +236,11 @@ class ClaimAutomaticResolvingIntegrationTest {
         // and
         Client client = fixtures.aClientWithClaims(Client.Type.NORMAL, 3);
         // and
-        fixtures.clientHasDoneTransits(client, 2);
+        fixtures.hasDoneTransits(client, 2);
         // and
         Transit transit = fixtures.aCompletedTransitFor(driver, client, 50);
         // and
-        Claim claim = fixtures.createClaim(client, transit);
+        Claim claim = fixtures.aClaimFor(client, transit);
         // and
         clearInvocations(clientNotificationService);
 

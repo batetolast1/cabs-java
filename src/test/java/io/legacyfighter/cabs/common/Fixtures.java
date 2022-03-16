@@ -8,6 +8,7 @@ import io.legacyfighter.cabs.repository.AddressRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
 import io.legacyfighter.cabs.repository.DriverFeeRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
+import io.legacyfighter.cabs.service.AwardsService;
 import io.legacyfighter.cabs.service.CarTypeService;
 import io.legacyfighter.cabs.service.ClaimService;
 import io.legacyfighter.cabs.service.DriverService;
@@ -47,6 +48,9 @@ public class Fixtures {
     @Autowired
     private ClaimService claimService;
 
+    @Autowired
+    private AwardsService awardsService;
+
     public Transit aCompletedTransitAt(Driver driver, LocalDateTime dateTime) {
         Instant date = dateTime.toInstant(OffsetDateTime.now().getOffset());
         Distance km = Distance.ofKm(10.0f);
@@ -59,6 +63,10 @@ public class Fixtures {
         transit.completeAt(date, null, km);
         transitRepository.save(transit);
         return transit;
+    }
+
+    public Transit aCompletedTransitFor(Client client) {
+        return aCompletedTransitFor(aDriver(), client, Money.ZERO.toInt());
     }
 
     public Transit aCompletedTransitFor(Driver driver, Client client, int price) {
@@ -132,7 +140,7 @@ public class Fixtures {
         return clientRepository.save(client);
     }
 
-    public Claim createClaim(Client client, Transit transit) {
+    public Claim aClaimFor(Client client, Transit transit) {
         ClaimDTO claimDTO = new ClaimDTO();
         claimDTO.setClientId(client.getId());
         claimDTO.setTransitId(transit.getId());
@@ -143,22 +151,36 @@ public class Fixtures {
 
     public Client aClientWithClaims(Client.Type type, int howManyClaims) {
         Client client = aClient(type);
-        clientHasDoneClaims(client, howManyClaims);
+        hasDoneClaims(client, howManyClaims);
         return client;
     }
 
-    public void clientHasDoneClaims(Client client, int howManyClaims) {
+    public void hasDoneClaims(Client client, int howManyClaims) {
         IntStream.range(0, howManyClaims)
                 .forEach(i -> createAndResolveClaim(client, aCompletedTransitFor(aDriver(), client, 20)));
     }
 
     public void createAndResolveClaim(Client client, Transit transit) {
-        Claim claim = createClaim(client, transit);
+        Claim claim = aClaimFor(client, transit);
         claimService.tryToResolveAutomatically(claim.getId());
     }
 
-    public void clientHasDoneTransits(Client client, int howManyTransits) {
+    public void hasDoneTransits(Client client, int howManyTransits) {
         IntStream.range(0, howManyTransits)
                 .forEach(i -> aCompletedTransitFor(aDriver(), client, 20));
+    }
+
+    public void hasRegisteredAwardsAccount(Client client) {
+        awardsService.registerToProgram(client.getId());
+    }
+
+    public void hasActiveAwardsAccount(Client client) {
+        hasRegisteredAwardsAccount(client);
+        awardsService.activateAccount(client.getId());
+    }
+
+    public void hasInactiveAwardsAccount(Client client) {
+        hasActiveAwardsAccount(client);
+        awardsService.deactivateAccount(client.getId());
     }
 }
