@@ -1,7 +1,5 @@
-package io.legacyfighter.cabs.entity;
+package io.legacyfighter.cabs.entity.miles;
 
-import io.legacyfighter.cabs.entity.miles.ConstantUntil;
-import io.legacyfighter.cabs.entity.miles.Miles;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -10,7 +8,7 @@ import java.time.temporal.ChronoUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-class MilesTest {
+class ConstantUntilTest {
 
     private final static Instant YESTERDAY = Instant.now().minus(1, ChronoUnit.DAYS);
     private final static Instant TODAY = Instant.now();
@@ -49,8 +47,8 @@ class MilesTest {
         Miles result = miles.subtract(5, TODAY);
 
         // then
-        assertThat(result.getAmountFor(TODAY)).isEqualTo(5);
-        assertThat(result.expiresAt()).isEqualTo(Instant.MAX);
+        ConstantUntil expected = ConstantUntil.constantUntilForever(5);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
@@ -62,8 +60,8 @@ class MilesTest {
         Miles result = miles.subtract(0, TODAY);
 
         // then
-        assertThat(result.getAmountFor(TODAY)).isEqualTo(10);
-        assertThat(result.expiresAt()).isEqualTo(Instant.MAX);
+        ConstantUntil expected = ConstantUntil.constantUntilForever(10);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
@@ -75,8 +73,8 @@ class MilesTest {
         Miles result = miles.subtract(5, TODAY);
 
         // then
-        assertThat(result.getAmountFor(TODAY)).isEqualTo(5);
-        assertThat(result.expiresAt()).isEqualTo(TODAY);
+        ConstantUntil expected = ConstantUntil.constantUntil(5, TODAY);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
@@ -88,8 +86,8 @@ class MilesTest {
         Miles result = miles.subtract(0, TODAY);
 
         // then
-        assertThat(result.getAmountFor(TODAY)).isEqualTo(10);
-        assertThat(result.expiresAt()).isEqualTo(TODAY);
+        ConstantUntil expected = ConstantUntil.constantUntil(10, TODAY);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
