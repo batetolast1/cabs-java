@@ -2,9 +2,9 @@ package io.legacyfighter.cabs.integration;
 
 import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.config.AppProperties;
-import io.legacyfighter.cabs.entity.AwardedMiles;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
+import io.legacyfighter.cabs.entity.miles.AwardedMiles;
 import io.legacyfighter.cabs.repository.AwardedMilesRepository;
 import io.legacyfighter.cabs.service.AwardsService;
 import org.junit.jupiter.api.Test;
@@ -337,6 +337,6 @@ class RemovingAwardsMilesIntegrationTest {
                 .filter(miles -> Objects.equals(awardedMiles.getId(), miles.getId()))
                 .findFirst();
         assertThat(optionalAwardedMiles).isPresent();
-        assertThat(optionalAwardedMiles.get().getMiles()).isEqualTo(milesAfterReduction);
+        assertThat(optionalAwardedMiles.get().getMilesAmount(Instant.now())).isEqualTo(milesAfterReduction);
     }
 }

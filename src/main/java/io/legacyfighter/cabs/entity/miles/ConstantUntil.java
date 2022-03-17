@@ -1,12 +1,16 @@
-package io.legacyfighter.cabs.entity;
+package io.legacyfighter.cabs.entity.miles;
 
 import java.time.Instant;
 import java.util.Objects;
 
 public class ConstantUntil implements Miles {
 
-    private final Integer amount;
-    private final Instant whenExpires;
+    private Integer amount;
+    private Instant whenExpires;
+
+    public ConstantUntil() {
+        // for Jackson
+    }
 
     private ConstantUntil(int amount, Instant whenExpires) {
         this.amount = amount;
@@ -22,16 +26,16 @@ public class ConstantUntil implements Miles {
     }
 
     @Override
-    public Integer getAmountFor(Instant moment) {
-        return !whenExpires.isBefore(moment) ? amount : 0;
+    public Integer getAmountFor(Instant when) {
+        return !whenExpires.isBefore(when) ? amount : 0;
     }
 
     @Override
-    public Miles subtract(Integer amount, Instant moment) {
+    public Miles subtract(Integer amount, Instant when) {
         if (amount < 0) {
             throw new IllegalArgumentException("Incorrect amount of miles");
         }
-        if (getAmountFor(moment) < amount) {
+        if (getAmountFor(when) < amount) {
             throw new IllegalArgumentException("Insufficient amount of miles");
         }
         return new ConstantUntil(this.amount - amount, this.whenExpires);

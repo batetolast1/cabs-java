@@ -1,7 +1,7 @@
 package io.legacyfighter.cabs.service;
 
 import io.legacyfighter.cabs.dto.AwardsAccountDTO;
-import io.legacyfighter.cabs.entity.AwardedMiles;
+import io.legacyfighter.cabs.entity.miles.AwardedMiles;
 
 public interface AwardsService {
 
@@ -15,11 +15,11 @@ public interface AwardsService {
 
     AwardedMiles registerMiles(Long clientId, Long transitId);
 
-    AwardedMiles registerNonExpiringMiles(Long clientId, Integer miles);
+    AwardedMiles registerNonExpiringMiles(Long clientId, Integer milesAmount);
 
-    void removeMiles(Long clientId, Integer miles);
+    void removeMiles(Long clientId, Integer milesAmount);
 
     Integer calculateBalance(Long clientId);
 
-    void transferMiles(Long fromClientId, Long toClientId, Integer miles);
+    void transferMiles(Long fromClientId, Long toClientId, Integer milesAmount);
 }

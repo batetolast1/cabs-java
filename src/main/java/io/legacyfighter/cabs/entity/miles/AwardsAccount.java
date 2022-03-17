@@ -1,6 +1,7 @@
-package io.legacyfighter.cabs.entity;
+package io.legacyfighter.cabs.entity.miles;
 
 import io.legacyfighter.cabs.common.BaseEntity;
+import io.legacyfighter.cabs.entity.Client;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,26 +24,31 @@ public class AwardsAccount extends BaseEntity {
     private Integer transactions = 0;
 
     public AwardsAccount() {
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
+        // for JPA
     }
 
     public Client getClient() {
         return client;
     }
 
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public Instant getDate() {
+        return date;
+    }
+
     public void setDate(Instant date) {
         this.date = date;
     }
 
-    public void setActive(Boolean active) {
-        isActive = active;
-    }
-
     public Boolean isActive() {
         return isActive;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
     }
 
     public Integer getTransactions() {
@@ -51,10 +57,6 @@ public class AwardsAccount extends BaseEntity {
 
     public void increaseTransactions() {
         transactions++;
-    }
-
-    public Instant getDate() {
-        return date;
     }
 
     @Override

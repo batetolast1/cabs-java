@@ -2,10 +2,11 @@ package io.legacyfighter.cabs.service;
 
 import io.legacyfighter.cabs.config.AppProperties;
 import io.legacyfighter.cabs.dto.AwardsAccountDTO;
-import io.legacyfighter.cabs.entity.AwardedMiles;
-import io.legacyfighter.cabs.entity.AwardsAccount;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
+import io.legacyfighter.cabs.entity.miles.AwardedMiles;
+import io.legacyfighter.cabs.entity.miles.AwardsAccount;
+import io.legacyfighter.cabs.entity.miles.ConstantUntil;
 import io.legacyfighter.cabs.repository.AwardedMilesRepository;
 import io.legacyfighter.cabs.repository.AwardsAccountRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
@@ -104,22 +105,27 @@ public class AwardsServiceImpl implements AwardsService {
             throw new IllegalArgumentException("transit does not exists, id = " + transitId);
         }
 
-        Instant now = Instant.now(clock);
         if (account == null || !account.isActive()) {
             return null;
         } else {
-            AwardedMiles miles = new AwardedMiles();
-            miles.setTransit(transit);
-            miles.setDate(Instant.now(clock));
-            miles.setClient(account.getClient());
-            miles.setMiles(appProperties.getDefaultMilesBonus());
-            miles.setExpirationDate(now.plus(appProperties.getMilesExpirationInDays(), ChronoUnit.DAYS));
-            miles.setCantExpire(false);
+            Instant now = Instant.now(clock);
+            Integer defaultMilesBonus = appProperties.getDefaultMilesBonus();
+            Instant whenExpires = now.plus(appProperties.getMilesExpirationInDays(), ChronoUnit.DAYS);
+            ConstantUntil miles = ConstantUntil.constantUntil(defaultMilesBonus, whenExpires);
+
+            AwardedMiles awardedMiles = new AwardedMiles();
+            awardedMiles.setClient(account.getClient());
+            awardedMiles.setTransit(transit);
+            awardedMiles.setDate(now);
+            awardedMiles.setMiles(miles);
+
+            milesRepository.save(awardedMiles);
+
             account.increaseTransactions();
 
-            milesRepository.save(miles);
             accountRepository.save(account);
-            return miles;
+
+            return awardedMiles;
         }
     }
 
@@ -130,59 +136,73 @@ public class AwardsServiceImpl implements AwardsService {
         if (account == null) {
             throw new IllegalArgumentException("Account does not exists, id = " + clientId);
         } else {
-            AwardedMiles miles = new AwardedMiles();
-            miles.setTransit(null);
-            miles.setClient(account.getClient());
-            miles.setMiles(milesAmount);
-            miles.setDate(Instant.now(clock));
-            miles.setCantExpire(true);
+            Instant now = Instant.now(clock);
+            ConstantUntil miles = ConstantUntil.constantUntilForever(milesAmount);
+
+            AwardedMiles awardedMiles = new AwardedMiles();
+            awardedMiles.setClient(account.getClient());
+            awardedMiles.setTransit(null);
+            awardedMiles.setDate(now);
+            awardedMiles.setMiles(miles);
+
+            milesRepository.save(awardedMiles);
+
             account.increaseTransactions();
-            milesRepository.save(miles);
+
             accountRepository.save(account);
-            return miles;
+
+            return awardedMiles;
         }
     }
 
     @Override
     @Transactional
-    public void removeMiles(Long clientId, Integer miles) {
+    public void removeMiles(Long clientId, Integer milesAmount) {
         Client client = clientRepository.getOne(clientId);
         AwardsAccount account = accountRepository.findByClient(client);
 
         if (account == null) {
             throw new IllegalArgumentException("Account does not exists, id = " + clientId);
         } else {
-            if (calculateBalance(clientId) >= miles && Boolean.TRUE.equals(account.isActive())) {
-                List<AwardedMiles> milesList = milesRepository.findAllByClient(client);
+            if (calculateBalance(clientId) >= milesAmount && Boolean.TRUE.equals(account.isActive())) {
+                List<AwardedMiles> awardedMilesList = milesRepository.findAllByClient(client);
                 int transitsCounter = transitRepository.findByClient(client).size();
+
                 if (client.getClaims().size() >= 3) {
-                    milesList.sort(Comparator.comparing(AwardedMiles::getExpirationDate, Comparators.nullsHigh()).reversed().thenComparing(Comparators.nullsHigh()));
+                    awardedMilesList.sort(Comparator.comparing(AwardedMiles::getExpirationDate, Comparators.nullsHigh()).reversed().thenComparing(Comparators.nullsHigh()));
                 } else if (client.getType().equals(Client.Type.VIP)) {
-                    milesList.sort(Comparator.comparing(AwardedMiles::cantExpire).thenComparing(AwardedMiles::getExpirationDate, Comparators.nullsLow()));
+                    awardedMilesList.sort(Comparator.comparing(AwardedMiles::cantExpire).thenComparing(AwardedMiles::getExpirationDate, Comparators.nullsLow()));
                 } else if (transitsCounter >= 15 && isSunday()) {
-                    milesList.sort(Comparator.comparing(AwardedMiles::cantExpire).thenComparing(AwardedMiles::getExpirationDate, Comparators.nullsLow()));
+                    awardedMilesList.sort(Comparator.comparing(AwardedMiles::cantExpire).thenComparing(AwardedMiles::getExpirationDate, Comparators.nullsLow()));
                 } else if (transitsCounter >= 15) {
-                    milesList.sort(Comparator.comparing(AwardedMiles::cantExpire).thenComparing(AwardedMiles::getDate));
+                    awardedMilesList.sort(Comparator.comparing(AwardedMiles::cantExpire).thenComparing(AwardedMiles::getDate));
                 } else {
-                    milesList.sort(Comparator.comparing(AwardedMiles::getDate));
+                    awardedMilesList.sort(Comparator.comparing(AwardedMiles::getDate));
                 }
-                for (AwardedMiles iter : milesList) {
-                    if (miles <= 0) {
+
+                Instant now = Instant.now(clock);
+
+                for (AwardedMiles awardedMiles : awardedMilesList) {
+                    if (milesAmount <= 0) {
                         break;
                     }
-                    if (Boolean.TRUE.equals(iter.cantExpire()) || iter.getExpirationDate().isAfter(Instant.now(clock))) {
-                        if (iter.getMiles() <= miles) {
-                            miles -= iter.getMiles();
-                            iter.setMiles(0);
+
+                    if (Boolean.TRUE.equals(awardedMiles.cantExpire()) || awardedMiles.getExpirationDate().isAfter(now)) {
+                        Integer awardedMilesAmount = awardedMiles.getMilesAmount(now);
+
+                        if (awardedMilesAmount <= milesAmount) {
+                            milesAmount -= awardedMilesAmount;
+                            awardedMiles.removeAllMiles(now);
                         } else {
-                            iter.setMiles(iter.getMiles() - miles);
-                            miles = 0;
+                            awardedMiles.subtract(milesAmount, now);
+                            milesAmount = 0;
                         }
-                        milesRepository.save(iter);
+
+                        milesRepository.save(awardedMiles);
                     }
                 }
             } else {
-                throw new IllegalArgumentException("Insufficient miles, id = " + clientId + ", miles requested = " + miles);
+                throw new IllegalArgumentException("Insufficient milesAmount, id = " + clientId + ", milesAmount requested = " + milesAmount);
             }
         }
 
@@ -191,11 +211,13 @@ public class AwardsServiceImpl implements AwardsService {
     @Override
     public Integer calculateBalance(Long clientId) {
         Client client = clientRepository.getOne(clientId);
-        List<AwardedMiles> milesList = milesRepository.findAllByClient(client);
+        List<AwardedMiles> awardedMilesList = milesRepository.findAllByClient(client);
+        Instant now = Instant.now(clock);
 
-        return milesList.stream()
-                .filter(t -> t.getExpirationDate() != null && t.getExpirationDate().isAfter(Instant.now(clock)) || t.cantExpire())
-                .map(AwardedMiles::getMiles)
+        return awardedMilesList.stream()
+                .filter(awardedMiles -> (awardedMiles.getExpirationDate() != null && awardedMiles.getExpirationDate().isAfter(now))
+                        || Boolean.TRUE.equals(awardedMiles.cantExpire()))
+                .map(awardedMiles -> awardedMiles.getMilesAmount(now))
                 .reduce(0, Integer::sum);
     }
 
@@ -204,6 +226,7 @@ public class AwardsServiceImpl implements AwardsService {
         Client fromClient = clientRepository.getOne(fromClientId);
         AwardsAccount accountFrom = accountRepository.findByClient(fromClient);
         AwardsAccount accountTo = accountRepository.findByClient(clientRepository.getOne(toClientId));
+
         if (accountFrom == null) {
             throw new IllegalArgumentException("Account does not exists, id = " + fromClientId);
         }
@@ -212,28 +235,32 @@ public class AwardsServiceImpl implements AwardsService {
         }
 
         if (calculateBalance(fromClientId) >= milesAmount && Boolean.TRUE.equals(accountFrom.isActive())) {
-            List<AwardedMiles> milesList = milesRepository.findAllByClient(fromClient);
+            List<AwardedMiles> awardedMilesList = milesRepository.findAllByClient(fromClient);
+            Instant now = Instant.now(clock);
 
-            for (AwardedMiles iter : milesList) {
-                if (Boolean.TRUE.equals(iter.cantExpire()) || iter.getExpirationDate().isAfter(Instant.now(clock))) {
-                    if (iter.getMiles() <= milesAmount) {
-                        iter.setClient(accountTo.getClient());
-                        milesAmount -= iter.getMiles();
+            for (AwardedMiles awardedMiles : awardedMilesList) {
+                if ((awardedMiles.getExpirationDate() != null && awardedMiles.getExpirationDate().isAfter(now))
+                        || Boolean.TRUE.equals(awardedMiles.cantExpire())) {
+
+                    Integer awardedMilesAmount = awardedMiles.getMilesAmount(now);
+
+                    if (awardedMilesAmount <= milesAmount) {
+                        awardedMiles.setClient(accountTo.getClient());
+
+                        milesAmount -= awardedMilesAmount;
                     } else {
-                        iter.setMiles(iter.getMiles() - milesAmount);
-                        AwardedMiles miles = new AwardedMiles();
+                        awardedMiles.subtract(milesAmount, now);
 
-                        miles.setClient(accountTo.getClient());
-                        miles.setCantExpire(iter.cantExpire());
-                        miles.setExpirationDate(iter.getExpirationDate());
-                        miles.setMiles(milesAmount);
+                        AwardedMiles transferredAwardedMiles = new AwardedMiles();
+                        transferredAwardedMiles.setClient(accountTo.getClient());
+                        transferredAwardedMiles.setMiles(awardedMiles.getMiles());
 
-                        milesAmount -= iter.getMiles();
+                        milesRepository.save(transferredAwardedMiles);
 
-                        milesRepository.save(miles);
-
+                        milesAmount -= awardedMilesAmount;
                     }
-                    milesRepository.save(iter);
+                    
+                    milesRepository.save(awardedMiles);
                 }
             }
 
@@ -245,7 +272,11 @@ public class AwardsServiceImpl implements AwardsService {
         }
     }
 
-    boolean isSunday() {
-        return Instant.now(clock).atZone(ZoneId.systemDefault()).toLocalDate().getDayOfWeek().equals(DayOfWeek.SUNDAY);
+    private boolean isSunday() {
+        return Instant.now(clock)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+                .getDayOfWeek()
+                .equals(DayOfWeek.SUNDAY);
     }
 }

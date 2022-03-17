@@ -1,4 +1,4 @@
-package io.legacyfighter.cabs.entity;
+package io.legacyfighter.cabs.entity.miles;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -11,9 +11,9 @@ import java.time.Instant;
 })
 public interface Miles {
 
-    Integer getAmountFor(Instant moment);
+    Integer getAmountFor(Instant when);
 
-    Miles subtract(Integer amount, Instant moment);
+    Miles subtract(Integer amount, Instant when);
 
     Instant expiresAt();
 }

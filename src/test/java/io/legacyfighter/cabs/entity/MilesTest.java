@@ -1,5 +1,7 @@
 package io.legacyfighter.cabs.entity;
 
+import io.legacyfighter.cabs.entity.miles.ConstantUntil;
+import io.legacyfighter.cabs.entity.miles.Miles;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
