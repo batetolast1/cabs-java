@@ -2,14 +2,35 @@ package io.legacyfighter.cabs.entity.miles;
 
 import io.legacyfighter.cabs.common.BaseEntity;
 import io.legacyfighter.cabs.entity.Client;
+import io.legacyfighter.cabs.entity.Transit;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.springframework.util.comparator.Comparators;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 public class AwardsAccount extends BaseEntity {
+
+    private static final int CLAIM_COUNT_THRESHOLD = 3;
+    private static final int TRANSIT_COUNT_THRESHOLD = 15;
+
+    private static final Comparator<AwardedMiles> FIRST_NON_EXPIRING_THEN_LATEST_TO_EXPIRE =
+            Comparator.comparing(AwardedMiles::getExpirationDate, Comparators.nullsHigh())
+                    .reversed()
+                    .thenComparing(Comparators.nullsHigh());
+    private static final Comparator<AwardedMiles> SOON_TO_EXPIRE_FIRST_THEN_NON_EXPIRING =
+            Comparator.comparing(AwardedMiles::cantExpire)
+                    .thenComparing(AwardedMiles::getExpirationDate, Comparators.nullsLow());
+    private static final Comparator<AwardedMiles> LATEST_TO_EXPIRE_FIRST_THEN_NON_EXPIRING =
+            Comparator.comparing(AwardedMiles::cantExpire)
+                    .thenComparing(AwardedMiles::getDate);
+    private static final Comparator<AwardedMiles> OLDEST_FIRST = Comparator.comparing(AwardedMiles::getDate);
 
     @OneToOne
     private Client client;
@@ -23,52 +44,183 @@ public class AwardsAccount extends BaseEntity {
     @Column(nullable = false)
     private Integer transactions = 0;
 
+    @OneToMany(mappedBy = "account",
+            cascade = CascadeType.ALL)
+    @Fetch(value = FetchMode.JOIN)
+    private List<AwardedMiles> miles = new ArrayList<>();
+
     public AwardsAccount() {
         // for JPA
     }
 
-    public Client getClient() {
-        return client;
+    private AwardsAccount(Client client, Instant date, boolean isActive) {
+        this.client = client;
+        this.date = date;
+        this.isActive = isActive;
     }
 
-    public void setClient(Client client) {
-        this.client = client;
+    public Client getClient() {
+        return this.client;
     }
 
     public Instant getDate() {
-        return date;
+        return this.date;
     }
 
-    public void setDate(Instant date) {
-        this.date = date;
-    }
-
-    public Boolean isActive() {
-        return isActive;
-    }
-
-    public void setActive(Boolean active) {
-        isActive = active;
+    public boolean isActive() {
+        return Boolean.TRUE.equals(this.isActive);
     }
 
     public Integer getTransactions() {
-        return transactions;
+        return this.transactions;
     }
 
-    public void increaseTransactions() {
-        transactions++;
+    List<AwardedMiles> getMiles() {
+        return this.miles;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AwardsAccount that = (AwardsAccount) o;
+        return Objects.equals(client, that.client) && Objects.equals(date, that.date) && Objects.equals(isActive, that.isActive) && Objects.equals(transactions, that.transactions) && Objects.equals(miles, that.miles);
+    }
 
-        if (!(o instanceof AwardsAccount))
-            return false;
+    public static AwardsAccount notActiveAccount(Client client, Instant createdAt) {
+        return new AwardsAccount(client, createdAt, false);
+    }
 
-        AwardsAccount other = (AwardsAccount) o;
+    public void activate() {
+        this.isActive = true;
+    }
 
-        return this.getId() != null &&
-                this.getId().equals(other.getId());
+    public void deactivate() {
+        this.isActive = false;
+    }
+
+    public AwardedMiles addExpiringMiles(Integer milesAmount,
+                                         Instant at,
+                                         Instant expireAt,
+                                         Transit transit) {
+        Miles expiringMiles = ConstantUntil.constantUntil(milesAmount, expireAt);
+        AwardedMiles awardedMiles = new AwardedMiles(transit, at, expiringMiles, this);
+
+        this.miles.add(awardedMiles);
+        this.transactions++;
+
+        return awardedMiles;
+    }
+
+    public AwardedMiles addNonExpiringMiles(Integer milesAmount, Instant at) {
+        Miles nonExpiringMiles = ConstantUntil.constantUntilForever(milesAmount);
+        AwardedMiles awardedMiles = new AwardedMiles(null, at, nonExpiringMiles, this);
+
+        this.miles.add(awardedMiles);
+        this.transactions++;
+
+        return awardedMiles;
+    }
+
+    public void remove(int milesAmountToRemove,
+                       Instant at,
+                       int transitCount,
+                       int claimCount,
+                       Client.Type clientType,
+                       boolean isSunday) {
+        if (!this.isActive) {
+            throw new IllegalArgumentException("Awards account is not active, id = " + this.id);
+        }
+        if (milesAmountToRemove > this.calculateBalance(at)) {
+            throw new IllegalArgumentException("Insufficient miles, id = " + this.id +
+                    ", miles to remove requested = " + milesAmountToRemove);
+        }
+
+        List<AwardedMiles> awardedMilesList = sortAwardedMiles(transitCount, claimCount, clientType, isSunday);
+
+        for (AwardedMiles awardedMiles : awardedMilesList) {
+            if (milesAmountToRemove <= 0) {
+                break;
+            }
+
+            if (awardedMiles.cantExpire() || awardedMiles.isNotExpired(at)) {
+                Integer awardedMilesAmount = awardedMiles.getMilesAmount(at);
+
+                if (awardedMilesAmount <= milesAmountToRemove) {
+                    awardedMiles.removeAllMiles(at);
+                } else {
+                    awardedMiles.subtract(milesAmountToRemove, at);
+                }
+
+                milesAmountToRemove -= awardedMilesAmount;
+            }
+        }
+    }
+
+    private List<AwardedMiles> sortAwardedMiles(int transitCount, int claimCount, Client.Type clientType, boolean isSunday) {
+        List<AwardedMiles> awardedMilesList = new ArrayList<>(this.miles);
+
+        if (claimCount >= CLAIM_COUNT_THRESHOLD) {
+            awardedMilesList.sort(FIRST_NON_EXPIRING_THEN_LATEST_TO_EXPIRE);
+        } else if (clientType.equals(Client.Type.VIP)) {
+            awardedMilesList.sort(SOON_TO_EXPIRE_FIRST_THEN_NON_EXPIRING);
+        } else if (transitCount >= TRANSIT_COUNT_THRESHOLD && isSunday) {
+            awardedMilesList.sort(SOON_TO_EXPIRE_FIRST_THEN_NON_EXPIRING);
+        } else if (transitCount >= TRANSIT_COUNT_THRESHOLD) {
+            awardedMilesList.sort(LATEST_TO_EXPIRE_FIRST_THEN_NON_EXPIRING);
+        } else {
+            awardedMilesList.sort(OLDEST_FIRST);
+        }
+
+        return awardedMilesList;
+    }
+
+    public Integer calculateBalance(Instant at) {
+        return this.miles.stream()
+                .filter(awardedMiles -> awardedMiles.cantExpire() || awardedMiles.isNotExpired(at))
+                .map(awardedMiles -> awardedMiles.getMilesAmount(at))
+                .reduce(0, Integer::sum);
+    }
+
+    public void moveMilesTo(AwardsAccount accountTo, Integer milesAmountToTransfer, Instant at) {
+        if (!this.isActive) {
+            throw new IllegalArgumentException("Awards account is not active, id = " + this.id);
+        }
+        if (milesAmountToTransfer > this.calculateBalance(at)) {
+            throw new IllegalArgumentException("Insufficient miles, id = " + this.id +
+                    ", miles to transfer requested = " + milesAmountToTransfer);
+        }
+
+        List<AwardedMiles> awardedMilesList = new ArrayList<>(this.miles);
+        for (AwardedMiles awardedMilesFrom : awardedMilesList) {
+            if (milesAmountToTransfer <= 0) {
+                break;
+            }
+
+            if (awardedMilesFrom.cantExpire() || awardedMilesFrom.isNotExpired(at)) {
+                Integer awardedMilesFromAmount = awardedMilesFrom.getMilesAmount(at);
+
+                if (awardedMilesFromAmount <= milesAmountToTransfer) {
+                    awardedMilesFrom.transferToAccount(accountTo);
+
+                    this.miles.remove(awardedMilesFrom);
+                    accountTo.miles.add(awardedMilesFrom);
+                } else {
+                    Miles newMiles = awardedMilesFrom.getMiles()
+                            .subtract(awardedMilesFromAmount - milesAmountToTransfer, at);
+
+                    AwardedMiles newAwardedMiles = new AwardedMiles(null, at, newMiles, accountTo);
+
+                    accountTo.miles.add(newAwardedMiles);
+
+                    awardedMilesFrom.subtract(milesAmountToTransfer, at);
+                }
+
+                milesAmountToTransfer -= awardedMilesFromAmount;
+            }
+        }
+
+        this.transactions++;
+        accountTo.transactions++;
     }
 }

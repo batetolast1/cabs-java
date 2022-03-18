@@ -39,32 +39,32 @@ public class ConstantUntil implements Miles {
                 '}';
     }
 
-    public static ConstantUntil constantUntilForever(int amount) {
-        return new ConstantUntil(amount, Instant.MAX);
+    public static ConstantUntil constantUntilForever(int milesAmount) {
+        return new ConstantUntil(milesAmount, Instant.MAX);
     }
 
-    public static ConstantUntil constantUntil(int amount, Instant whenExpires) {
-        return new ConstantUntil(amount, whenExpires);
-    }
-
-    @Override
-    public Integer getAmountFor(Instant when) {
-        return !this.whenExpires.isBefore(when) ? this.amount : 0;
+    public static ConstantUntil constantUntil(int milesAmount, Instant expireAt) {
+        return new ConstantUntil(milesAmount, expireAt);
     }
 
     @Override
-    public Miles subtract(Integer amount, Instant when) {
-        if (amount < 0) {
+    public Integer getAmount(Instant at) {
+        return !this.whenExpires.isBefore(at) ? this.amount : 0;
+    }
+
+    @Override
+    public Miles subtract(Integer milesAmount, Instant at) {//20
+        if (milesAmount < 0) {
             throw new IllegalArgumentException("Incorrect amount of miles");
         }
 
-        Integer currentAmount = this.getAmountFor(when);
+        Integer currentAmount = this.getAmount(at); // 50
 
-        if (currentAmount < amount) {
+        if (currentAmount < milesAmount) {
             throw new IllegalArgumentException("Insufficient amount of miles");
         }
 
-        return new ConstantUntil(this.amount - amount, this.whenExpires);
+        return new ConstantUntil(this.amount - milesAmount, this.whenExpires);
     }
 
     @Override

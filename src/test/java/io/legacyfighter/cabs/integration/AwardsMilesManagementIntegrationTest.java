@@ -20,9 +20,14 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import static io.legacyfighter.cabs.entity.Client.Type.NORMAL;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.when;
 
+/**
+ * @deprecated use {@link io.legacyfighter.cabs.entity.miles.AwardsAccountTest}
+ */
 @SpringBootTest
 class AwardsMilesManagementIntegrationTest {
 
@@ -321,91 +326,124 @@ class AwardsMilesManagementIntegrationTest {
 
         // when
         awardsService.registerMiles(clientFrom.getId(), transit.getId());
+        awardsService.registerNonExpiringMiles(clientFrom.getId(), 15);
+        awardsService.registerMiles(clientFrom.getId(), transit.getId());
         awardsService.registerNonExpiringMiles(clientFrom.getId(), 20);
-        awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 30);
+
+        awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 27);
 
         // then
         AwardsAccountDTO awardsAccountFrom = awardsService.findBy(clientFrom.getId());
         assertThat(awardsAccountFrom.getClient().getId()).isEqualTo(clientFrom.getId());
-        assertThat(awardsAccountFrom.getTransactions()).isEqualTo(3);
-        Integer clientFromBalance = awardsService.calculateBalance(clientFrom.getId());
-        assertThat(clientFromBalance).isZero();
-        List<AwardedMiles> milesByClientFrom = awardedMilesRepository.findAllByClient(clientFrom);
-        assertThat(milesByClientFrom).isEmpty();
+        assertThat(awardsAccountFrom.getTransactions()).isEqualTo(5);
 
+        Integer clientFromBalance = awardsService.calculateBalance(clientFrom.getId());
+        assertThat(clientFromBalance).isEqualTo(28);
+
+        List<AwardedMiles> milesByClientFrom = awardedMilesRepository.findAllByClient(clientFrom);
+        assertThat(milesByClientFrom).hasSize(2);
+        assertThat(milesByClientFrom.get(0).getDate()).isEqualTo(NOW);
+        assertThat(milesByClientFrom.get(0).getClient()).isEqualTo(clientFrom);
+        assertThat(milesByClientFrom.get(0).getMilesAmount(NOW)).isEqualTo(8);
+        assertThat(milesByClientFrom.get(0).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
+        assertThat(milesByClientFrom.get(0).cantExpire()).isFalse();
+
+        assertThat(milesByClientFrom.get(1).getDate()).isEqualTo(NOW);
+        assertThat(milesByClientFrom.get(1).getClient()).isEqualTo(clientFrom);
+        assertThat(milesByClientFrom.get(1).getMilesAmount(NOW)).isEqualTo(20);
+        assertThat(milesByClientFrom.get(1).getExpirationDate()).isEqualTo(Instant.MAX);
+        assertThat(milesByClientFrom.get(1).cantExpire()).isTrue();
+
+        // and
         AwardsAccountDTO awardsAccountTo = awardsService.findBy(clientTo.getId());
         assertThat(awardsAccountTo.getClient().getId()).isEqualTo(clientTo.getId());
-        assertThat(awardsAccountTo.getTransactions()).isOne();
+        assertThat(awardsAccountTo.getTransactions()).isEqualTo(1);
+
         Integer clientToBalance = awardsService.calculateBalance(clientTo.getId());
-        assertThat(clientToBalance).isEqualTo(30);
+        assertThat(clientToBalance).isEqualTo(27);
+
         List<AwardedMiles> milesByClientTo = awardedMilesRepository.findAllByClient(clientTo);
-        assertThat(milesByClientTo).hasSize(2);
+        assertThat(milesByClientTo).hasSize(3);
         assertThat(milesByClientTo.get(0).getDate()).isEqualTo(NOW);
         assertThat(milesByClientTo.get(0).getClient()).isEqualTo(clientTo);
         assertThat(milesByClientTo.get(0).getMilesAmount(NOW)).isEqualTo(10);
         assertThat(milesByClientTo.get(0).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
         assertThat(milesByClientTo.get(0).cantExpire()).isFalse();
+
         assertThat(milesByClientTo.get(1).getDate()).isEqualTo(NOW);
         assertThat(milesByClientTo.get(1).getClient()).isEqualTo(clientTo);
-        assertThat(milesByClientTo.get(1).getMilesAmount(NOW)).isEqualTo(20);
+        assertThat(milesByClientTo.get(1).getMilesAmount(NOW)).isEqualTo(15);
         assertThat(milesByClientTo.get(1).getExpirationDate()).isEqualTo(Instant.MAX);
         assertThat(milesByClientTo.get(1).cantExpire()).isTrue();
+
+        assertThat(milesByClientTo.get(2).getDate()).isNotNull();
+        assertThat(milesByClientTo.get(2).getClient()).isEqualTo(clientTo);
+        assertThat(milesByClientTo.get(2).getMilesAmount(NOW)).isEqualTo(2);
+        assertThat(milesByClientTo.get(2).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
+        assertThat(milesByClientTo.get(2).cantExpire()).isFalse();
     }
 
     @Test
     void cannotTransferMilesIfClientFromIsNotActive() {
         // when
         Client clientFrom = fixtures.aClient();
+        Long clientFromId = clientFrom.getId();
         Client clientTo = fixtures.aClient();
+        Long clientToId = clientTo.getId();
         // and
         fixtures.hasRegisteredAwardsAccount(clientFrom);
         fixtures.hasActiveAwardsAccount(clientTo);
 
         // when
-        awardsService.registerNonExpiringMiles(clientFrom.getId(), 20);
-        awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 20);
-
-        // then
-        AwardsAccountDTO awardsAccountFrom = awardsService.findBy(clientFrom.getId());
-        assertThat(awardsAccountFrom.getClient().getId()).isEqualTo(clientFrom.getId());
-        assertThat(awardsAccountFrom.getTransactions()).isEqualTo(1);
-        Integer clientFromBalance = awardsService.calculateBalance(clientFrom.getId());
-        assertThat(clientFromBalance).isEqualTo(20);
-
-        AwardsAccountDTO awardsAccountTo = awardsService.findBy(clientTo.getId());
-        assertThat(awardsAccountTo.getClient().getId()).isEqualTo(clientTo.getId());
-        assertThat(awardsAccountTo.getTransactions()).isZero();
-        Integer clientToBalance = awardsService.calculateBalance(clientTo.getId());
-        assertThat(clientToBalance).isZero();
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> awardsService.transferMiles(clientFromId, clientToId, 20));
     }
 
     @Test
     void cannotTransferMilesIfClientFromHasNotEnough() {
         // when
         Client clientFrom = fixtures.aClient();
+        Long clientFromId = clientFrom.getId();
         Client clientTo = fixtures.aClient();
+        Long clientToId = clientTo.getId();
         // and
         fixtures.hasActiveAwardsAccount(clientFrom);
         fixtures.hasActiveAwardsAccount(clientTo);
         // and
         Transit transit = fixtures.aCompletedTransitFor(clientFrom);
-
-        // when
         awardsService.registerMiles(clientFrom.getId(), transit.getId());
         awardsService.registerNonExpiringMiles(clientFrom.getId(), 20);
-        awardsService.transferMiles(clientFrom.getId(), clientTo.getId(), 40);
 
-        // then
-        AwardsAccountDTO awardsAccountFrom = awardsService.findBy(clientFrom.getId());
-        assertThat(awardsAccountFrom.getClient().getId()).isEqualTo(clientFrom.getId());
-        assertThat(awardsAccountFrom.getTransactions()).isEqualTo(2);
-        Integer clientFromBalance = awardsService.calculateBalance(clientFrom.getId());
-        assertThat(clientFromBalance).isEqualTo(30);
+        // when
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> awardsService.transferMiles(clientFromId, clientToId, 40));
+    }
 
-        AwardsAccountDTO awardsAccountTo = awardsService.findBy(clientTo.getId());
-        assertThat(awardsAccountTo.getClient().getId()).isEqualTo(clientTo.getId());
-        assertThat(awardsAccountTo.getTransactions()).isZero();
-        Integer clientToBalance = awardsService.calculateBalance(clientTo.getId());
-        assertThat(clientToBalance).isZero();
+    @Test
+    void cannotRemoveMilesWhenAccountIsNotActive() {
+        // given
+        Client client = fixtures.aClient(NORMAL);
+        Long clientId = client.getId();
+        // and
+        fixtures.hasRegisteredAwardsAccount(client);
+
+        // when
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> awardsService.removeMiles(clientId, 40));
+    }
+
+    @Test
+    void cannotRemoveMilesWhenNotEnoughMiles() {
+        // given
+        Client client = fixtures.aClient(NORMAL);
+        Long clientId = client.getId();
+        // and
+        fixtures.hasRegisteredAwardsAccount(client);
+        // and
+        awardsService.registerNonExpiringMiles(clientId, 20);
+        
+        // when
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> awardsService.removeMiles(clientId, 40));
     }
 }

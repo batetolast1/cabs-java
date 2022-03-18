@@ -2,7 +2,10 @@ package io.legacyfighter.cabs.entity;
 
 import io.legacyfighter.cabs.common.BaseEntity;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,19 +36,19 @@ public class Client extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ClientType clientType;
 
-    public List<Claim> getClaims() {
-        return claims;
-    }
-
-    public void setClaims(List<Claim> claims) {
-        this.claims = claims;
-    }
-
     @OneToMany(mappedBy = "owner")
     private List<Claim> claims = new ArrayList<>();
 
     public Client() {
+        // for JPA
+    }
 
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     public String getName() {
@@ -64,6 +67,14 @@ public class Client extends BaseEntity {
         this.lastName = lastName;
     }
 
+    public PaymentType getDefaultPaymentType() {
+        return defaultPaymentType;
+    }
+
+    public void setDefaultPaymentType(PaymentType defaultPaymentType) {
+        this.defaultPaymentType = defaultPaymentType;
+    }
+
     public ClientType getClientType() {
         return clientType;
     }
@@ -72,20 +83,12 @@ public class Client extends BaseEntity {
         this.clientType = clientType;
     }
 
-    public Type getType() {
-        return type;
+    public List<Claim> getClaims() {
+        return claims;
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
-
-    public PaymentType getDefaultPaymentType() {
-        return defaultPaymentType;
-    }
-
-    public void setDefaultPaymentType(PaymentType defaultPaymentType) {
-        this.defaultPaymentType = defaultPaymentType;
+    public void setClaims(List<Claim> claims) {
+        this.claims = claims;
     }
 
     @Override

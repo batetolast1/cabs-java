@@ -21,9 +21,9 @@ class ConstantUntilTest {
 
         // then
         assertThat(miles.expiresAt()).isEqualTo(Instant.MAX);
-        assertThat(miles.getAmountFor(YESTERDAY)).isEqualTo(10);
-        assertThat(miles.getAmountFor(TODAY)).isEqualTo(10);
-        assertThat(miles.getAmountFor(TOMORROW)).isEqualTo(10);
+        assertThat(miles.getAmount(YESTERDAY)).isEqualTo(10);
+        assertThat(miles.getAmount(TODAY)).isEqualTo(10);
+        assertThat(miles.getAmount(TOMORROW)).isEqualTo(10);
     }
 
     @Test
@@ -33,9 +33,9 @@ class ConstantUntilTest {
 
         // then
         assertThat(miles.expiresAt()).isEqualTo(TODAY);
-        assertThat(miles.getAmountFor(YESTERDAY)).isEqualTo(10);
-        assertThat(miles.getAmountFor(TODAY)).isEqualTo(10);
-        assertThat(miles.getAmountFor(TOMORROW)).isZero();
+        assertThat(miles.getAmount(YESTERDAY)).isEqualTo(10);
+        assertThat(miles.getAmount(TODAY)).isEqualTo(10);
+        assertThat(miles.getAmount(TOMORROW)).isZero();
     }
 
     @Test

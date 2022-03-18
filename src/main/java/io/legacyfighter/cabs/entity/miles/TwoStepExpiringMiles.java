@@ -15,10 +15,10 @@ public class TwoStepExpiringMiles implements Miles {
         // for Jackson
     }
 
-    public TwoStepExpiringMiles(Integer amount,
-                                Instant whenFirstHalfExpires,
-                                Instant whenExpires) {
-        this.amount = amount;
+    TwoStepExpiringMiles(Integer milesAmount,
+                         Instant whenFirstHalfExpires,
+                         Instant whenExpires) {
+        this.amount = milesAmount;
         this.whenFirstHalfExpires = whenFirstHalfExpires;
         this.whenExpires = whenExpires;
     }
@@ -46,29 +46,29 @@ public class TwoStepExpiringMiles implements Miles {
     }
 
     @Override
-    public Integer getAmountFor(Instant when) {
-        if (!this.whenFirstHalfExpires.isBefore(when)) {
+    public Integer getAmount(Instant at) {
+        if (!this.whenFirstHalfExpires.isBefore(at)) {
             return this.amount;
         }
-        if (!this.whenExpires.isBefore(when)) {
+        if (!this.whenExpires.isBefore(at)) {
             return this.amount - halfOf(this.amount);
         }
         return 0;
     }
 
     @Override
-    public Miles subtract(Integer amount, Instant when) {
-        if (amount < 0) {
+    public Miles subtract(Integer milesAmount, Instant at) {
+        if (milesAmount < 0) {
             throw new IllegalArgumentException("Incorrect amount of miles");
         }
 
-        Integer currentAmount = this.getAmountFor(when);
+        Integer currentAmount = this.getAmount(at);
 
-        if (currentAmount < amount) {
+        if (currentAmount < milesAmount) {
             throw new IllegalArgumentException("Insufficient amount of miles");
         }
 
-        return new TwoStepExpiringMiles(currentAmount - amount, this.whenFirstHalfExpires, this.whenExpires);
+        return new TwoStepExpiringMiles(currentAmount - milesAmount, this.whenFirstHalfExpires, this.whenExpires);
     }
 
     @Override

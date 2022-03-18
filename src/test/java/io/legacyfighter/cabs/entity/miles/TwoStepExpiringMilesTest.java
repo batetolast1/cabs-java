@@ -21,9 +21,9 @@ class TwoStepExpiringMilesTest {
 
         // then
         assertThat(twoStepExpiringMiles.expiresAt()).isEqualTo(TODAY);
-        assertThat(twoStepExpiringMiles.getAmountFor(YESTERDAY)).isEqualTo(10);
-        assertThat(twoStepExpiringMiles.getAmountFor(TODAY)).isEqualTo(5);
-        assertThat(twoStepExpiringMiles.getAmountFor(TOMORROW)).isZero();
+        assertThat(twoStepExpiringMiles.getAmount(YESTERDAY)).isEqualTo(10);
+        assertThat(twoStepExpiringMiles.getAmount(TODAY)).isEqualTo(5);
+        assertThat(twoStepExpiringMiles.getAmount(TOMORROW)).isZero();
     }
 
     @Test

@@ -24,72 +24,86 @@ public class AwardedMiles extends BaseEntity {
 
     private String milesJson;
 
+    @ManyToOne
+    private AwardsAccount account;
+
     public AwardedMiles() {
         // for JPA
     }
 
-    public Client getClient() {
-        return client;
+    AwardedMiles(Transit transit,
+                 Instant at,
+                 Miles miles,
+                 AwardsAccount account) {
+        this.client = account.getClient();
+        this.transit = transit;
+        this.date = at;
+        this.setMiles(miles);
+        this.account = account;
     }
 
-    public void setClient(Client client) {
-        this.client = client;
+    public Client getClient() {
+        return this.client;
     }
 
     public Transit getTransit() {
-        return transit;
+        return this.transit;
     }
 
-    public void setTransit(Transit transit) {
-        this.transit = transit;
-    }
-
-    public Miles getMiles() {
-        return MilesJsonMapper.deserialize(milesJson);
-    }
-
-    public void setMiles(Miles miles) {
-        this.milesJson = MilesJsonMapper.serialize(miles);
+    Miles getMiles() {
+        return MilesJsonMapper.deserialize(this.milesJson);
     }
 
     public Instant getDate() {
-        return date;
+        return this.date;
     }
 
-    public void setDate(Instant date) {
-        this.date = date;
+    public AwardsAccount getAccount() {
+        return this.account;
     }
 
-    public Integer getMilesAmount(Instant when) {
-        return this.getMiles().getAmountFor(when);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AwardedMiles that = (AwardedMiles) o;
+        return Objects.equals(client, that.client) && Objects.equals(transit, that.transit) && Objects.equals(date, that.date) && Objects.equals(milesJson, that.milesJson) && Objects.equals(account, that.account);
+    }
+
+    public Integer getMilesAmount(Instant at) {
+        return this.getMiles().getAmount(at);
     }
 
     public Instant getExpirationDate() {
         return this.getMiles().expiresAt();
     }
 
-    public Boolean cantExpire() {
-        return Objects.equals(this.getMiles().expiresAt(), Instant.MAX);
+    boolean isNotExpired(Instant at) {
+        Miles miles = this.getMiles();
+
+        return miles.expiresAt() != null && miles.expiresAt().isAfter(at);
     }
 
-    public void subtract(Integer miles, Instant when) {
-        setMiles(this.getMiles().subtract(miles, when));
+    public boolean cantExpire() {
+        Miles miles = this.getMiles();
+
+        return miles.expiresAt() != null && Objects.equals(miles.expiresAt(), Instant.MAX);
     }
 
-    public void removeAllMiles(Instant when) {
-        setMiles(this.getMiles().subtract(this.getMilesAmount(when), when));
+    void subtract(Integer miles, Instant at) {
+        setMiles(this.getMiles().subtract(miles, at));
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
+    void removeAllMiles(Instant at) {
+        setMiles(this.getMiles().subtract(this.getMilesAmount(at), at));
+    }
 
-        if (!(o instanceof AwardedMiles))
-            return false;
+    private void setMiles(Miles miles) {
+        this.milesJson = MilesJsonMapper.serialize(miles);
+    }
 
-        AwardedMiles other = (AwardedMiles) o;
-
-        return this.getId() != null &&
-                this.getId().equals(other.getId());
+    void transferToAccount(AwardsAccount awardsAccount) {
+        this.client = awardsAccount.getClient();
+        this.account = awardsAccount;
     }
 }

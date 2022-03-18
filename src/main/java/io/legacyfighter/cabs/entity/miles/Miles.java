@@ -12,9 +12,9 @@ import java.time.Instant;
 })
 public interface Miles {
 
-    Integer getAmountFor(Instant when);
+    Integer getAmount(Instant at);
 
-    Miles subtract(Integer amount, Instant when);
+    Miles subtract(Integer milesAmount, Instant at);
 
     Instant expiresAt();
 }
