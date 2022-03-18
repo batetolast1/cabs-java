@@ -6,7 +6,6 @@ import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.entity.miles.AwardedMiles;
 import io.legacyfighter.cabs.entity.miles.AwardsAccount;
-import io.legacyfighter.cabs.repository.AwardedMilesRepository;
 import io.legacyfighter.cabs.repository.AwardsAccountRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
@@ -23,20 +22,17 @@ import java.time.temporal.ChronoUnit;
 public class AwardsServiceImpl implements AwardsService {
 
     private final AwardsAccountRepository accountRepository;
-    private final AwardedMilesRepository milesRepository;
     private final ClientRepository clientRepository;
     private final TransitRepository transitRepository;
     private final Clock clock;
     private final AppProperties appProperties;
 
     public AwardsServiceImpl(AwardsAccountRepository accountRepository,
-                             AwardedMilesRepository milesRepository,
                              ClientRepository clientRepository,
                              TransitRepository transitRepository,
                              Clock clock,
                              AppProperties appProperties) {
         this.accountRepository = accountRepository;
-        this.milesRepository = milesRepository;
         this.clientRepository = clientRepository;
         this.transitRepository = transitRepository;
         this.clock = clock;

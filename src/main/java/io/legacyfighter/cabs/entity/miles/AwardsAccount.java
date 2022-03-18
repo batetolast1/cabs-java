@@ -9,10 +9,7 @@ import org.springframework.util.comparator.Comparators;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 public class AwardsAccount extends BaseEntity {
@@ -75,8 +72,8 @@ public class AwardsAccount extends BaseEntity {
         return this.transactions;
     }
 
-    List<AwardedMiles> getMiles() {
-        return this.miles;
+    public List<AwardedMiles> getMiles() {
+        return Collections.unmodifiableList(new ArrayList<>(this.miles));
     }
 
     @Override

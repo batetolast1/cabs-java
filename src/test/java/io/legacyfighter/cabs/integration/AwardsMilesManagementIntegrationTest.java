@@ -5,7 +5,7 @@ import io.legacyfighter.cabs.dto.AwardsAccountDTO;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.entity.miles.AwardedMiles;
-import io.legacyfighter.cabs.repository.AwardedMilesRepository;
+import io.legacyfighter.cabs.repository.AwardsAccountRepository;
 import io.legacyfighter.cabs.service.AwardsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class AwardsMilesManagementIntegrationTest {
     private Fixtures fixtures;
 
     @Autowired
-    private AwardedMilesRepository awardedMilesRepository;
+    private AwardsAccountRepository awardsAccountRepository;
 
     @Autowired
     private AwardsService awardsService;
@@ -163,7 +163,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardedMilesRepository.findAllByClient(client);
+        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
         assertThat(awardedMiles).hasSize(1);
         assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
@@ -191,7 +191,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(3);
 
-        List<AwardedMiles> awardedMiles = awardedMilesRepository.findAllByClient(client);
+        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
         assertThat(awardedMiles).hasSize(3);
     }
 
@@ -213,7 +213,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(differentClient.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardedMilesRepository.findAllByClient(differentClient);
+        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(differentClient).getMiles();
         assertThat(awardedMiles).hasSize(1);
         assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(differentClient);
@@ -239,7 +239,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isZero();
 
-        List<AwardedMiles> awardedMiles = awardedMilesRepository.findAllByClient(client);
+        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
         assertThat(awardedMiles).isEmpty();
     }
 
@@ -258,7 +258,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardedMilesRepository.findAllByClient(client);
+        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
         assertThat(awardedMiles).hasSize(1);
         assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
@@ -282,7 +282,7 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardedMilesRepository.findAllByClient(client);
+        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
         assertThat(awardedMiles).hasSize(1);
         assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
         assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
@@ -340,7 +340,7 @@ class AwardsMilesManagementIntegrationTest {
         Integer clientFromBalance = awardsService.calculateBalance(clientFrom.getId());
         assertThat(clientFromBalance).isEqualTo(28);
 
-        List<AwardedMiles> milesByClientFrom = awardedMilesRepository.findAllByClient(clientFrom);
+        List<AwardedMiles> milesByClientFrom = awardsAccountRepository.findByClient(clientFrom).getMiles();
         assertThat(milesByClientFrom).hasSize(2);
         assertThat(milesByClientFrom.get(0).getDate()).isEqualTo(NOW);
         assertThat(milesByClientFrom.get(0).getClient()).isEqualTo(clientFrom);
@@ -362,7 +362,7 @@ class AwardsMilesManagementIntegrationTest {
         Integer clientToBalance = awardsService.calculateBalance(clientTo.getId());
         assertThat(clientToBalance).isEqualTo(27);
 
-        List<AwardedMiles> milesByClientTo = awardedMilesRepository.findAllByClient(clientTo);
+        List<AwardedMiles> milesByClientTo = awardsAccountRepository.findByClient(clientTo).getMiles();
         assertThat(milesByClientTo).hasSize(3);
         assertThat(milesByClientTo.get(0).getDate()).isEqualTo(NOW);
         assertThat(milesByClientTo.get(0).getClient()).isEqualTo(clientTo);
@@ -441,7 +441,7 @@ class AwardsMilesManagementIntegrationTest {
         fixtures.hasRegisteredAwardsAccount(client);
         // and
         awardsService.registerNonExpiringMiles(clientId, 20);
-        
+
         // when
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> awardsService.removeMiles(clientId, 40));
