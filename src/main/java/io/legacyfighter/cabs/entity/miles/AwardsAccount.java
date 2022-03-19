@@ -72,7 +72,7 @@ public class AwardsAccount extends BaseEntity {
         return this.transactions;
     }
 
-    public List<AwardedMiles> getMiles() {
+    List<AwardedMiles> getMiles() {
         return Collections.unmodifiableList(new ArrayList<>(this.miles));
     }
 
@@ -125,7 +125,7 @@ public class AwardsAccount extends BaseEntity {
                        int claimCount,
                        Client.Type clientType,
                        boolean isSunday) {
-        if (!this.isActive) {
+        if (Boolean.FALSE.equals(this.isActive)) {
             throw new IllegalArgumentException("Awards account is not active, id = " + this.id);
         }
         if (milesAmountToRemove > this.calculateBalance(at)) {
@@ -140,7 +140,7 @@ public class AwardsAccount extends BaseEntity {
                 break;
             }
 
-            if (awardedMiles.cantExpire() || awardedMiles.isNotExpired(at)) {
+            if (awardedMiles.expired(at)) {
                 Integer awardedMilesAmount = awardedMiles.getMilesAmount(at);
 
                 if (awardedMilesAmount <= milesAmountToRemove) {
@@ -174,13 +174,13 @@ public class AwardsAccount extends BaseEntity {
 
     public Integer calculateBalance(Instant at) {
         return this.miles.stream()
-                .filter(awardedMiles -> awardedMiles.cantExpire() || awardedMiles.isNotExpired(at))
+                .filter(awardedMiles -> awardedMiles.expired(at))
                 .map(awardedMiles -> awardedMiles.getMilesAmount(at))
                 .reduce(0, Integer::sum);
     }
 
     public void moveMilesTo(AwardsAccount accountTo, Integer milesAmountToTransfer, Instant at) {
-        if (!this.isActive) {
+        if (Boolean.FALSE.equals(this.isActive)) {
             throw new IllegalArgumentException("Awards account is not active, id = " + this.id);
         }
         if (milesAmountToTransfer > this.calculateBalance(at)) {
@@ -194,7 +194,7 @@ public class AwardsAccount extends BaseEntity {
                 break;
             }
 
-            if (awardedMilesFrom.cantExpire() || awardedMilesFrom.isNotExpired(at)) {
+            if (awardedMilesFrom.expired(at)) {
                 Integer awardedMilesFromAmount = awardedMilesFrom.getMilesAmount(at);
 
                 if (awardedMilesFromAmount <= milesAmountToTransfer) {

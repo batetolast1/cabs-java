@@ -42,11 +42,11 @@ public class AwardedMiles extends BaseEntity {
         this.account = account;
     }
 
-    public Client getClient() {
+    Client getClient() {
         return this.client;
     }
 
-    public Transit getTransit() {
+    Transit getTransit() {
         return this.transit;
     }
 
@@ -54,11 +54,11 @@ public class AwardedMiles extends BaseEntity {
         return MilesJsonMapper.deserialize(this.milesJson);
     }
 
-    public Instant getDate() {
+    Instant getDate() {
         return this.date;
     }
 
-    public AwardsAccount getAccount() {
+    AwardsAccount getAccount() {
         return this.account;
     }
 
@@ -70,24 +70,24 @@ public class AwardedMiles extends BaseEntity {
         return Objects.equals(client, that.client) && Objects.equals(transit, that.transit) && Objects.equals(date, that.date) && Objects.equals(milesJson, that.milesJson) && Objects.equals(account, that.account);
     }
 
-    public Integer getMilesAmount(Instant at) {
+    Integer getMilesAmount(Instant at) {
         return this.getMiles().getAmount(at);
     }
 
-    public Instant getExpirationDate() {
+    Instant getExpirationDate() {
         return this.getMiles().expiresAt();
     }
 
-    boolean isNotExpired(Instant at) {
-        Miles miles = this.getMiles();
-
-        return miles.expiresAt() != null && miles.expiresAt().isAfter(at);
-    }
-
-    public boolean cantExpire() {
+    boolean cantExpire() {
         Miles miles = this.getMiles();
 
         return miles.expiresAt() != null && Objects.equals(miles.expiresAt(), Instant.MAX);
+    }
+
+    boolean expired(Instant at) {
+        Miles miles = this.getMiles();
+
+        return miles.expiresAt() != null && (miles.expiresAt().isAfter(at) || Objects.equals(miles.expiresAt(), Instant.MAX));
     }
 
     void subtract(Integer miles, Instant at) {

@@ -4,8 +4,6 @@ import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.config.AppProperties;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
-import io.legacyfighter.cabs.entity.miles.AwardedMiles;
-import io.legacyfighter.cabs.repository.AwardsAccountRepository;
 import io.legacyfighter.cabs.service.AwardsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,17 +15,12 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
 
 import static io.legacyfighter.cabs.entity.Client.Type.NORMAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.when;
 
-/**
- * @deprecated use {@link io.legacyfighter.cabs.entity.miles.AwardsAccountTest}
- */
 @SpringBootTest
 class RemovingAwardsMilesIntegrationTest {
 
@@ -44,9 +37,6 @@ class RemovingAwardsMilesIntegrationTest {
 
     @Autowired
     private Fixtures fixtures;
-
-    @Autowired
-    private AwardsAccountRepository awardsAccountRepository;
 
     @Autowired
     private AwardsService awardsService;
@@ -77,22 +67,19 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneClaims(client, 3);
         // and
-        AwardedMiles firstToExpire = grantedMilesThatWillExpireInDays(client, 5, 10, MONDAY);
-        AwardedMiles secondToExpire = grantedMilesThatWillExpireInDays(client, 10, 60, MONDAY);
-        AwardedMiles thirdToExpire = grantedMilesThatWillExpireInDays(client, 15, 365, MONDAY);
-        AwardedMiles nonExpiringMiles = grantedNonExpiringMiles(client, 20, MONDAY);
-        // and
+        grantedMilesThatWillExpireInDays(client, 5, 10, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 60, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 15, 365, MONDAY);
+        grantedNonExpiringMiles(client, 20, MONDAY);
+
         isMonday();
 
         // when
         awardsService.removeMiles(client.getId(), 40);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(firstToExpire, 5, awardedMiles);
-        assertThatMilesWereReducedTo(secondToExpire, 5, awardedMiles);
-        assertThatMilesWereReducedTo(thirdToExpire, 0, awardedMiles);
-        assertThatMilesWereReducedTo(nonExpiringMiles, 0, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(10);
     }
 
     @Test
@@ -102,10 +89,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneClaims(client, 3);
         // and
-        AwardedMiles firstToExpire = grantedMilesThatWillExpireInDays(client, 5, 10, MONDAY);
-        AwardedMiles secondToExpire = grantedMilesThatWillExpireInDays(client, 10, 60, MONDAY);
-        AwardedMiles thirdToExpire = grantedMilesThatWillExpireInDays(client, 15, 365, MONDAY);
-        AwardedMiles nonExpiringMiles = grantedNonExpiringMiles(client, 20, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 5, 10, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 60, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 15, 365, MONDAY);
+        grantedNonExpiringMiles(client, 20, MONDAY);
         // and
         isMonday();
 
@@ -113,11 +100,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 25);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(firstToExpire, 5, awardedMiles);
-        assertThatMilesWereReducedTo(secondToExpire, 10, awardedMiles);
-        assertThatMilesWereReducedTo(thirdToExpire, 10, awardedMiles);
-        assertThatMilesWereReducedTo(nonExpiringMiles, 0, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(25);
     }
 
     @Test
@@ -127,10 +111,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneTransits(client, 15);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isMonday();
 
@@ -138,11 +122,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 25);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 15, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 5, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 25, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(45);
     }
 
     @Test
@@ -152,10 +133,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneTransits(client, 15);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isMonday();
 
@@ -163,11 +144,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 50);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 20, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(20);
     }
 
     @Test
@@ -177,10 +155,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneTransits(client, 15);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isSunday();
 
@@ -188,11 +166,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 25);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 15, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 5, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 25, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(45);
     }
 
     @Test
@@ -202,10 +177,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneTransits(client, 15);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isSunday();
 
@@ -213,11 +188,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 50);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 20, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(20);
     }
 
     @Test
@@ -227,10 +199,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneTransits(client, 15);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isMonday();
 
@@ -238,11 +210,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 25);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 15, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 5, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 25, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(45);
     }
 
     @Test
@@ -252,10 +221,10 @@ class RemovingAwardsMilesIntegrationTest {
         // and
         fixtures.hasDoneTransits(client, 15);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isMonday();
 
@@ -263,11 +232,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 50);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 20, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(20);
     }
 
     @Test
@@ -275,10 +241,10 @@ class RemovingAwardsMilesIntegrationTest {
         // given
         Client client = aClientWithAnActiveMilesProgram(Client.Type.NORMAL);
         // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(client, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(client, 25, WEDNESDAY);
+        grantedNonExpiringMiles(client, 15, SUNDAY);
+        grantedMilesThatWillExpireInDays(client, 20, 365, MONDAY);
+        grantedMilesThatWillExpireInDays(client, 10, 10, TUESDAY);
+        grantedNonExpiringMiles(client, 25, WEDNESDAY);
         // and
         isMonday();
 
@@ -286,11 +252,8 @@ class RemovingAwardsMilesIntegrationTest {
         awardsService.removeMiles(client.getId(), 20);
 
         // then
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThatMilesWereReducedTo(sundayNonExpiringMiles, 0, awardedMiles);
-        assertThatMilesWereReducedTo(mondayNonExpiringMiles, 15, awardedMiles);
-        assertThatMilesWereReducedTo(tuesdayMiles, 10, awardedMiles);
-        assertThatMilesWereReducedTo(wednesdayMiles, 25, awardedMiles);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(50);
     }
 
     Client aClientWithAnActiveMilesProgram(Client.Type type) {
@@ -300,22 +263,22 @@ class RemovingAwardsMilesIntegrationTest {
         return client;
     }
 
-    AwardedMiles grantedMilesThatWillExpireInDays(Client client, int milesAmount, int expirationInDays, Instant at) {
+    void grantedMilesThatWillExpireInDays(Client client, int milesAmount, int expirationInDays, Instant at) {
         setMilesWillExpireInDays(expirationInDays);
         setDefaultMilesBonus(milesAmount);
-        return aMilesRegisteredAt(at, client);
+        aMilesRegisteredAt(at, client);
     }
 
-    AwardedMiles grantedNonExpiringMiles(Client client, int milesAmount, Instant at) {
+    void grantedNonExpiringMiles(Client client, int milesAmount, Instant at) {
         when(clock.instant()).thenReturn(at);
         setDefaultMilesBonus(milesAmount);
-        return awardsService.registerNonExpiringMiles(client.getId(), milesAmount);
+        awardsService.registerNonExpiringMiles(client.getId(), milesAmount);
     }
 
-    AwardedMiles aMilesRegisteredAt(Instant at, Client client) {
+    void aMilesRegisteredAt(Instant at, Client client) {
         when(clock.instant()).thenReturn(at);
         Transit transit = fixtures.aCompletedTransitFor(client);
-        return awardsService.registerMiles(client.getId(), transit.getId());
+        awardsService.registerMiles(client.getId(), transit.getId());
     }
 
     void setMilesWillExpireInDays(int days) {
@@ -332,16 +295,5 @@ class RemovingAwardsMilesIntegrationTest {
 
     void isMonday() {
         when(clock.instant()).thenReturn(MONDAY);
-    }
-
-    void assertThatMilesWereReducedTo(AwardedMiles awardedMiles, int milesAfterReduction, List<AwardedMiles> allMiles) {
-        Optional<Integer> optionalAwardedMiles = allMiles.stream()
-                .filter(am -> awardedMiles.getDate().equals(am.getDate())
-                        && awardedMiles.getExpirationDate().equals(am.getExpirationDate()))
-                .map(am -> am.getMilesAmount(Instant.MIN))
-                .findFirst();
-
-        assertThat(optionalAwardedMiles).isPresent();
-        assertThat(optionalAwardedMiles).contains(milesAfterReduction);
     }
 }

@@ -36,19 +36,6 @@ class AwardedMilesTest {
     }
 
     @Test
-    void canGetIsNotExpired() {
-        // given
-        AwardsAccount awardsAccount = AwardsAccount.notActiveAccount(null, null);
-        Miles miles = ConstantUntil.constantUntilForever(10);
-
-        // when
-        AwardedMiles awardedMiles = new AwardedMiles(null, null, miles, awardsAccount);
-
-        // then
-        assertThat(awardedMiles.isNotExpired(Instant.now())).isTrue();
-    }
-
-    @Test
     void canGetCantExpire() {
         // given
         AwardsAccount awardsAccount = AwardsAccount.notActiveAccount(null, null);

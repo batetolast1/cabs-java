@@ -4,8 +4,6 @@ import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.dto.AwardsAccountDTO;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
-import io.legacyfighter.cabs.entity.miles.AwardedMiles;
-import io.legacyfighter.cabs.repository.AwardsAccountRepository;
 import io.legacyfighter.cabs.service.AwardsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,17 +15,12 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 import static io.legacyfighter.cabs.entity.Client.Type.NORMAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.when;
 
-/**
- * @deprecated use {@link io.legacyfighter.cabs.entity.miles.AwardsAccountTest}
- */
 @SpringBootTest
 class AwardsMilesManagementIntegrationTest {
 
@@ -38,9 +31,6 @@ class AwardsMilesManagementIntegrationTest {
 
     @Autowired
     private Fixtures fixtures;
-
-    @Autowired
-    private AwardsAccountRepository awardsAccountRepository;
 
     @Autowired
     private AwardsService awardsService;
@@ -163,13 +153,8 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThat(awardedMiles).hasSize(1);
-        assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
-        assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
-        assertThat(awardedMiles.get(0).getMilesAmount(NOW)).isEqualTo(10);
-        assertThat(awardedMiles.get(0).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
-        assertThat(awardedMiles.get(0).cantExpire()).isFalse();
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(10);
     }
 
     @Test
@@ -191,8 +176,8 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(3);
 
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThat(awardedMiles).hasSize(3);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(30);
     }
 
     @Test
@@ -212,18 +197,10 @@ class AwardsMilesManagementIntegrationTest {
         AwardsAccountDTO awardsAccount = awardsService.findBy(differentClient.getId());
         assertThat(awardsAccount.getClient().getId()).isEqualTo(differentClient.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
-
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(differentClient).getMiles();
-        assertThat(awardedMiles).hasSize(1);
-        assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
-        assertThat(awardedMiles.get(0).getClient()).isEqualTo(differentClient);
-        assertThat(awardedMiles.get(0).getMilesAmount(NOW)).isEqualTo(10);
-        assertThat(awardedMiles.get(0).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
-        assertThat(awardedMiles.get(0).cantExpire()).isFalse();
     }
 
     @Test
-    void cantRegisterMilesForInactiveAccount() {
+    void cannotRegisterMilesForInactiveAccount() {
         // given
         Client client = fixtures.aClient(Client.Type.NORMAL);
         // and
@@ -239,8 +216,8 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isZero();
 
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThat(awardedMiles).isEmpty();
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isZero();
     }
 
     @Test
@@ -258,13 +235,8 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThat(awardedMiles).hasSize(1);
-        assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
-        assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
-        assertThat(awardedMiles.get(0).getMilesAmount(NOW)).isEqualTo(10);
-        assertThat(awardedMiles.get(0).getExpirationDate()).isEqualTo(Instant.MAX);
-        assertThat(awardedMiles.get(0).cantExpire()).isTrue();
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(10);
     }
 
     @Test
@@ -282,13 +254,8 @@ class AwardsMilesManagementIntegrationTest {
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
         assertThat(awardsAccount.getTransactions()).isEqualTo(1);
 
-        List<AwardedMiles> awardedMiles = awardsAccountRepository.findByClient(client).getMiles();
-        assertThat(awardedMiles).hasSize(1);
-        assertThat(awardedMiles.get(0).getDate()).isEqualTo(NOW);
-        assertThat(awardedMiles.get(0).getClient()).isEqualTo(client);
-        assertThat(awardedMiles.get(0).getMilesAmount(NOW)).isEqualTo(10);
-        assertThat(awardedMiles.get(0).getExpirationDate()).isEqualTo(Instant.MAX);
-        assertThat(awardedMiles.get(0).cantExpire()).isTrue();
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(10);
     }
 
     @Test
@@ -303,10 +270,10 @@ class AwardsMilesManagementIntegrationTest {
         // when
         awardsService.registerMiles(client.getId(), transit.getId());
         awardsService.registerNonExpiringMiles(client.getId(), 20);
-        Integer miles = awardsService.calculateBalance(client.getId());
 
         // then
-        assertThat(miles).isEqualTo(30);
+        Integer balance = awardsService.calculateBalance(client.getId());
+        assertThat(balance).isEqualTo(30);
 
         AwardsAccountDTO awardsAccount = awardsService.findBy(client.getId());
         assertThat(awardsAccount.getClient().getId()).isEqualTo(client.getId());
@@ -340,20 +307,6 @@ class AwardsMilesManagementIntegrationTest {
         Integer clientFromBalance = awardsService.calculateBalance(clientFrom.getId());
         assertThat(clientFromBalance).isEqualTo(28);
 
-        List<AwardedMiles> milesByClientFrom = awardsAccountRepository.findByClient(clientFrom).getMiles();
-        assertThat(milesByClientFrom).hasSize(2);
-        assertThat(milesByClientFrom.get(0).getDate()).isEqualTo(NOW);
-        assertThat(milesByClientFrom.get(0).getClient()).isEqualTo(clientFrom);
-        assertThat(milesByClientFrom.get(0).getMilesAmount(NOW)).isEqualTo(8);
-        assertThat(milesByClientFrom.get(0).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
-        assertThat(milesByClientFrom.get(0).cantExpire()).isFalse();
-
-        assertThat(milesByClientFrom.get(1).getDate()).isEqualTo(NOW);
-        assertThat(milesByClientFrom.get(1).getClient()).isEqualTo(clientFrom);
-        assertThat(milesByClientFrom.get(1).getMilesAmount(NOW)).isEqualTo(20);
-        assertThat(milesByClientFrom.get(1).getExpirationDate()).isEqualTo(Instant.MAX);
-        assertThat(milesByClientFrom.get(1).cantExpire()).isTrue();
-
         // and
         AwardsAccountDTO awardsAccountTo = awardsService.findBy(clientTo.getId());
         assertThat(awardsAccountTo.getClient().getId()).isEqualTo(clientTo.getId());
@@ -361,26 +314,6 @@ class AwardsMilesManagementIntegrationTest {
 
         Integer clientToBalance = awardsService.calculateBalance(clientTo.getId());
         assertThat(clientToBalance).isEqualTo(27);
-
-        List<AwardedMiles> milesByClientTo = awardsAccountRepository.findByClient(clientTo).getMiles();
-        assertThat(milesByClientTo).hasSize(3);
-        assertThat(milesByClientTo.get(0).getDate()).isEqualTo(NOW);
-        assertThat(milesByClientTo.get(0).getClient()).isEqualTo(clientTo);
-        assertThat(milesByClientTo.get(0).getMilesAmount(NOW)).isEqualTo(10);
-        assertThat(milesByClientTo.get(0).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
-        assertThat(milesByClientTo.get(0).cantExpire()).isFalse();
-
-        assertThat(milesByClientTo.get(1).getDate()).isEqualTo(NOW);
-        assertThat(milesByClientTo.get(1).getClient()).isEqualTo(clientTo);
-        assertThat(milesByClientTo.get(1).getMilesAmount(NOW)).isEqualTo(15);
-        assertThat(milesByClientTo.get(1).getExpirationDate()).isEqualTo(Instant.MAX);
-        assertThat(milesByClientTo.get(1).cantExpire()).isTrue();
-
-        assertThat(milesByClientTo.get(2).getDate()).isNotNull();
-        assertThat(milesByClientTo.get(2).getClient()).isEqualTo(clientTo);
-        assertThat(milesByClientTo.get(2).getMilesAmount(NOW)).isEqualTo(2);
-        assertThat(milesByClientTo.get(2).getExpirationDate()).isEqualTo(NOW.plus(365, ChronoUnit.DAYS));
-        assertThat(milesByClientTo.get(2).cantExpire()).isFalse();
     }
 
     @Test
