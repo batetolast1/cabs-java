@@ -5,7 +5,9 @@ import io.legacyfighter.cabs.dto.AwardsAccountDTO;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.entity.miles.AwardedMiles;
+import io.legacyfighter.cabs.entity.miles.AwardedMilesRemoveStrategy;
 import io.legacyfighter.cabs.entity.miles.AwardsAccount;
+import io.legacyfighter.cabs.entity.miles.MilesRemovingStrategyFactory;
 import io.legacyfighter.cabs.repository.AwardsAccountRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
@@ -13,9 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -26,17 +26,20 @@ public class AwardsService {
     private final TransitRepository transitRepository;
     private final Clock clock;
     private final AppProperties appProperties;
+    private final MilesRemovingStrategyFactory milesRemovingStrategyFactory;
 
     public AwardsService(AwardsAccountRepository accountRepository,
                          ClientRepository clientRepository,
                          TransitRepository transitRepository,
                          Clock clock,
-                         AppProperties appProperties) {
+                         AppProperties appProperties,
+                         MilesRemovingStrategyFactory milesRemovingStrategyFactory) {
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
         this.transitRepository = transitRepository;
         this.clock = clock;
         this.appProperties = appProperties;
+        this.milesRemovingStrategyFactory = milesRemovingStrategyFactory;
     }
 
     public AwardsAccountDTO findBy(Long clientId) {
@@ -126,18 +129,16 @@ public class AwardsService {
     @Transactional
     public void removeMiles(Long clientId, Integer milesAmountToRemove) {
         Client client = clientRepository.getOne(clientId);
-        AwardsAccount account = accountRepository.findByClient(client);
+        AwardsAccount awardsAccount = accountRepository.findByClient(client);
 
-        if (account == null) {
+        if (awardsAccount == null) {
             throw new IllegalArgumentException("Account does not exists, id = " + clientId);
         }
 
-        Instant at = Instant.now(clock);
-        Integer transitCount = transitRepository.countByClient(client);
-        int claimCount = client.getClaims().size();
-        Client.Type clientType = client.getType();
+        Instant at = Instant.now();
+        AwardedMilesRemoveStrategy strategy = milesRemovingStrategyFactory.chooseFor(client);
 
-        account.remove(milesAmountToRemove, at, transitCount, claimCount, clientType, isSunday());
+        awardsAccount.remove(milesAmountToRemove, at, strategy);
     }
 
     public Integer calculateBalance(Long clientId) {
@@ -167,13 +168,5 @@ public class AwardsService {
 
         accountRepository.save(accountFrom);
         accountRepository.save(accountTo);
-    }
-
-    private boolean isSunday() {
-        return Instant.now(clock)
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate()
-                .getDayOfWeek()
-                .equals(DayOfWeek.SUNDAY);
     }
 }

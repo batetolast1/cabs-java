@@ -5,29 +5,16 @@ import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Transit;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.springframework.util.comparator.Comparators;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 public class AwardsAccount extends BaseEntity {
-
-    private static final int CLAIM_COUNT_THRESHOLD = 3;
-    private static final int TRANSIT_COUNT_THRESHOLD = 15;
-
-    private static final Comparator<AwardedMiles> FIRST_NON_EXPIRING_THEN_LATEST_TO_EXPIRE =
-            Comparator.comparing(AwardedMiles::getExpirationDate, Comparators.nullsHigh())
-                    .reversed()
-                    .thenComparing(Comparators.nullsHigh());
-    private static final Comparator<AwardedMiles> SOON_TO_EXPIRE_FIRST_THEN_NON_EXPIRING =
-            Comparator.comparing(AwardedMiles::cantExpire)
-                    .thenComparing(AwardedMiles::getExpirationDate, Comparators.nullsLow());
-    private static final Comparator<AwardedMiles> LATEST_TO_EXPIRE_FIRST_THEN_NON_EXPIRING =
-            Comparator.comparing(AwardedMiles::cantExpire)
-                    .thenComparing(AwardedMiles::getDate);
-    private static final Comparator<AwardedMiles> OLDEST_FIRST = Comparator.comparing(AwardedMiles::getDate);
 
     @OneToOne
     private Client client;
@@ -121,11 +108,8 @@ public class AwardsAccount extends BaseEntity {
 
     public void remove(int milesAmountToRemove,
                        Instant at,
-                       int transitCount,
-                       int claimCount,
-                       Client.Type clientType,
-                       boolean isSunday) {
-        if (Boolean.FALSE.equals(this.isActive)) {
+                       AwardedMilesRemoveStrategy strategy) {
+        if (!this.isActive()) {
             throw new IllegalArgumentException("Awards account is not active, id = " + this.id);
         }
         if (milesAmountToRemove > this.calculateBalance(at)) {
@@ -133,7 +117,8 @@ public class AwardsAccount extends BaseEntity {
                     ", miles to remove requested = " + milesAmountToRemove);
         }
 
-        List<AwardedMiles> awardedMilesList = sortAwardedMiles(transitCount, claimCount, clientType, isSunday);
+        List<AwardedMiles> awardedMilesList = new ArrayList<>(this.miles);
+        awardedMilesList.sort(strategy);
 
         for (AwardedMiles awardedMiles : awardedMilesList) {
             if (milesAmountToRemove <= 0) {
@@ -154,24 +139,6 @@ public class AwardsAccount extends BaseEntity {
         }
     }
 
-    private List<AwardedMiles> sortAwardedMiles(int transitCount, int claimCount, Client.Type clientType, boolean isSunday) {
-        List<AwardedMiles> awardedMilesList = new ArrayList<>(this.miles);
-
-        if (claimCount >= CLAIM_COUNT_THRESHOLD) {
-            awardedMilesList.sort(FIRST_NON_EXPIRING_THEN_LATEST_TO_EXPIRE);
-        } else if (clientType.equals(Client.Type.VIP)) {
-            awardedMilesList.sort(SOON_TO_EXPIRE_FIRST_THEN_NON_EXPIRING);
-        } else if (transitCount >= TRANSIT_COUNT_THRESHOLD && isSunday) {
-            awardedMilesList.sort(SOON_TO_EXPIRE_FIRST_THEN_NON_EXPIRING);
-        } else if (transitCount >= TRANSIT_COUNT_THRESHOLD) {
-            awardedMilesList.sort(LATEST_TO_EXPIRE_FIRST_THEN_NON_EXPIRING);
-        } else {
-            awardedMilesList.sort(OLDEST_FIRST);
-        }
-
-        return awardedMilesList;
-    }
-
     public Integer calculateBalance(Instant at) {
         return this.miles.stream()
                 .filter(awardedMiles -> awardedMiles.expired(at))
@@ -180,7 +147,7 @@ public class AwardsAccount extends BaseEntity {
     }
 
     public void moveMilesTo(AwardsAccount accountTo, Integer milesAmountToTransfer, Instant at) {
-        if (Boolean.FALSE.equals(this.isActive)) {
+        if (!this.isActive()) {
             throw new IllegalArgumentException("Awards account is not active, id = " + this.id);
         }
         if (milesAmountToTransfer > this.calculateBalance(at)) {

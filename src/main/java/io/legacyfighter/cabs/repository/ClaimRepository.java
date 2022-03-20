@@ -13,4 +13,5 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     List<Claim> findByOwnerAndTransit(Client owner, Transit transit);
 
+    Integer countByOwner(Client owner);
 }

@@ -9,8 +9,6 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import static io.legacyfighter.cabs.entity.Client.Type.NORMAL;
-import static io.legacyfighter.cabs.entity.Client.Type.VIP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -19,8 +17,9 @@ class AwardsAccountTest {
     private static final Instant NOW = Instant.now();
     private static final Instant SUNDAY = LocalDateTime.of(2022, 3, 13, 12, 0, 0).toInstant(OffsetDateTime.now().getOffset());
     private static final Instant MONDAY = SUNDAY.plus(1, ChronoUnit.DAYS);
-    private static final Instant TUESDAY = SUNDAY.plus(2, ChronoUnit.DAYS);
-    private static final Instant WEDNESDAY = SUNDAY.plus(3, ChronoUnit.DAYS);
+
+    private static final TooManyClaimsRemoveStrategy TOO_MANY_CLAIMS_STRATEGY = new TooManyClaimsRemoveStrategy();
+    private static final DefaultRemoveStrategy DEFAULT_STRATEGY = new DefaultRemoveStrategy();
 
     @Test
     void canCreateNotActiveAwardsAccount() {
@@ -138,7 +137,7 @@ class AwardsAccountTest {
 
         // when
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> awardsAccount.remove(40, now, 10, 10, NORMAL, true));
+                .isThrownBy(() -> awardsAccount.remove(40, now, DEFAULT_STRATEGY));
     }
 
     @Test
@@ -150,7 +149,7 @@ class AwardsAccountTest {
 
         // when
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> awardsAccount.remove(40, now, 10, 10, NORMAL, true));
+                .isThrownBy(() -> awardsAccount.remove(40, now, DEFAULT_STRATEGY));
     }
 
     @Test
@@ -167,15 +166,7 @@ class AwardsAccountTest {
 
         // when
         assertThatExceptionOfType(ClassCastException.class)
-                .isThrownBy(() -> awardsAccount.remove(40, now, 10, 10, NORMAL, true));
-    }
-
-    AwardedMiles grantedMilesThatWillExpireInDays(AwardsAccount awardsAccount, int miles, int expirationInDays, Instant at) {
-        return awardsAccount.addExpiringMiles(miles, at, at.plus(expirationInDays, ChronoUnit.DAYS), null);
-    }
-
-    AwardedMiles grantedNonExpiringMiles(AwardsAccount awardsAccount, int miles, Instant at) {
-        return awardsAccount.addNonExpiringMiles(miles, at);
+                .isThrownBy(() -> awardsAccount.remove(40, now, TOO_MANY_CLAIMS_STRATEGY));
     }
 
     @Test
@@ -189,7 +180,7 @@ class AwardsAccountTest {
         AwardedMiles nonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 20, MONDAY);
 
         // when
-        awardsAccount.remove(40, MONDAY, 0, 3, NORMAL, false);
+        awardsAccount.remove(40, MONDAY, TOO_MANY_CLAIMS_STRATEGY);
 
         // then
         List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
@@ -202,214 +193,6 @@ class AwardsAccountTest {
         assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isEqualTo(5);
         assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isZero();
         assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isZero();
-    }
-
-    @Test
-    void shouldRemoveNonExpiringMilesFirstWhenClientHasManyClaims() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles firstToExpire = grantedMilesThatWillExpireInDays(awardsAccount, 5, 10, MONDAY);
-        AwardedMiles secondToExpire = grantedMilesThatWillExpireInDays(awardsAccount, 10, 60, MONDAY);
-        AwardedMiles thirdToExpire = grantedMilesThatWillExpireInDays(awardsAccount, 15, 365, MONDAY);
-        AwardedMiles nonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 20, MONDAY);
-
-        // when
-        awardsAccount.remove(25, MONDAY, 0, 3, NORMAL, false);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(firstToExpire);
-        assertThat(awardedMiles.get(1)).isEqualTo(secondToExpire);
-        assertThat(awardedMiles.get(2)).isEqualTo(thirdToExpire);
-        assertThat(awardedMiles.get(3)).isEqualTo(nonExpiringMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isEqualTo(5);
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isEqualTo(10);
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isEqualTo(10);
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isZero();
-    }
-
-    @Test
-    void shouldRemoveSoonToExpireMilesFirstWhenClientIsVip() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(25, MONDAY, 15, 0, VIP, false);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isEqualTo(15);
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isEqualTo(5);
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(25);
-    }
-
-    @Test
-    void shouldRemoveNonExpiringMilesLastWhenClientIsVip() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(50, MONDAY, 15, 0, VIP, false);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(20);
-    }
-
-    @Test
-    void shouldRemoveSoonToExpireMilesFirstWhenManyTransitsAndIsSunday() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(25, MONDAY, 15, 0, NORMAL, true);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isEqualTo(15);
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isEqualTo(5);
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(25);
-    }
-
-    @Test
-    void shouldRemoveNonExpiringMilesLastWhenManyTransitsAndIsSunday() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(50, MONDAY, 15, 0, NORMAL, true);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(20);
-    }
-
-    @Test
-    void shouldRemoveLatestToExpireMilesFirstWhenManyTransitsAndIsNotSunday() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(25, MONDAY, 15, 0, NORMAL, false);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isEqualTo(15);
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isEqualTo(5);
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(25);
-    }
-
-    @Test
-    void shouldRemoveNonExpiringMilesLastWhenManyTransitsAndIsNotSunday() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(50, MONDAY, 15, 0, NORMAL, false);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(20);
-    }
-
-    @Test
-    void byDefaultRemoveOldestMilesFirstEvenIfTheyAreNonExpiring() {
-        // given
-        AwardsAccount awardsAccount = anActiveAwardsAccount();
-        // and
-        AwardedMiles sundayNonExpiringMiles = grantedNonExpiringMiles(awardsAccount, 15, SUNDAY);
-        AwardedMiles mondayNonExpiringMiles = grantedMilesThatWillExpireInDays(awardsAccount, 20, 365, MONDAY);
-        AwardedMiles tuesdayMiles = grantedMilesThatWillExpireInDays(awardsAccount, 10, 10, TUESDAY);
-        AwardedMiles wednesdayMiles = grantedNonExpiringMiles(awardsAccount, 25, WEDNESDAY);
-
-        // when
-        awardsAccount.remove(20, MONDAY, 0, 0, NORMAL, false);
-
-        // then
-        List<AwardedMiles> awardedMiles = awardsAccount.getMiles();
-        assertThat(awardedMiles.get(0)).isEqualTo(sundayNonExpiringMiles);
-        assertThat(awardedMiles.get(1)).isEqualTo(mondayNonExpiringMiles);
-        assertThat(awardedMiles.get(2)).isEqualTo(tuesdayMiles);
-        assertThat(awardedMiles.get(3)).isEqualTo(wednesdayMiles);
-
-        assertThat(awardedMiles.get(0).getMilesAmount(MONDAY)).isZero();
-        assertThat(awardedMiles.get(1).getMilesAmount(MONDAY)).isEqualTo(15);
-        assertThat(awardedMiles.get(2).getMilesAmount(MONDAY)).isEqualTo(10);
-        assertThat(awardedMiles.get(3).getMilesAmount(MONDAY)).isEqualTo(25);
     }
 
     @Test
@@ -489,5 +272,13 @@ class AwardsAccountTest {
         AwardsAccount awardsAccount = anInactiveAwardsAccount();
         awardsAccount.activate();
         return awardsAccount;
+    }
+
+    AwardedMiles grantedMilesThatWillExpireInDays(AwardsAccount awardsAccount, int miles, int expirationInDays, Instant at) {
+        return awardsAccount.addExpiringMiles(miles, at, at.plus(expirationInDays, ChronoUnit.DAYS), null);
+    }
+
+    AwardedMiles grantedNonExpiringMiles(AwardsAccount awardsAccount, int miles, Instant at) {
+        return awardsAccount.addNonExpiringMiles(miles, at);
     }
 }
