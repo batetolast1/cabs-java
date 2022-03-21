@@ -6,7 +6,6 @@ import io.legacyfighter.cabs.entity.Contract;
 import io.legacyfighter.cabs.entity.ContractAttachment;
 import io.legacyfighter.cabs.repository.ContractAttachmentRepository;
 import io.legacyfighter.cabs.repository.ContractRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +14,14 @@ import java.util.List;
 @Service
 public class ContractService {
 
-    @Autowired
-    private ContractRepository contractRepository;
+    private final ContractRepository contractRepository;
+    private final ContractAttachmentRepository contractAttachmentRepository;
 
-    @Autowired
-    private ContractAttachmentRepository contractAttachmentRepository;
+    public ContractService(ContractRepository contractRepository,
+                           ContractAttachmentRepository contractAttachmentRepository) {
+        this.contractRepository = contractRepository;
+        this.contractAttachmentRepository = contractAttachmentRepository;
+    }
 
     @Transactional
     public Contract createContract(ContractDTO contractDTO) {
@@ -35,7 +37,7 @@ public class ContractService {
     public void acceptContract(Long id) {
         Contract contract = find(id);
         List<ContractAttachment> attachments = contractAttachmentRepository.findByContract(contract);
-        if(attachments.stream().allMatch(a -> a.getStatus().equals(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES))) {
+        if (attachments.stream().allMatch(a -> a.getStatus().equals(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES))) {
             contract.setStatus(Contract.Status.ACCEPTED);
         } else {
             throw new IllegalStateException("Not all attachments accepted by both sides");
@@ -47,7 +49,6 @@ public class ContractService {
         Contract contract = find(id);
         contract.setStatus(Contract.Status.REJECTED);
     }
-
 
     @Transactional
     public void rejectAttachment(Long attachmentId) {

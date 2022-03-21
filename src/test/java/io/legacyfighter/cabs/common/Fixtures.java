@@ -8,10 +8,7 @@ import io.legacyfighter.cabs.repository.AddressRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
 import io.legacyfighter.cabs.repository.DriverFeeRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
-import io.legacyfighter.cabs.service.AwardsService;
-import io.legacyfighter.cabs.service.CarTypeService;
-import io.legacyfighter.cabs.service.ClaimService;
-import io.legacyfighter.cabs.service.DriverService;
+import io.legacyfighter.cabs.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +47,9 @@ public class Fixtures {
 
     @Autowired
     private AwardsService awardsService;
+
+    @Autowired
+    private ContractService contractService;
 
     public Transit aCompletedTransitAt(Driver driver, LocalDateTime dateTime) {
         Instant date = dateTime.toInstant(OffsetDateTime.now().getOffset());
@@ -182,5 +182,46 @@ public class Fixtures {
     public void hasInactiveAwardsAccount(Client client) {
         hasActiveAwardsAccount(client);
         awardsService.deactivateAccount(client.getId());
+    }
+
+    public Contract aContractFor(String partnerName) {
+        ContractDTO contractDTO = new ContractDTO();
+        contractDTO.setPartnerName(partnerName);
+        contractDTO.setSubject("subject");
+        return contractService.createContract(contractDTO);
+    }
+
+    public Contract anAcceptedContractFor(String partnerName) {
+        Contract contract = aContractFor(partnerName);
+        contractService.acceptContract(contract.getId());
+        return contractService.find(contract.getId());
+    }
+
+    public Contract aRejectedContractFor(String partnerName) {
+        Contract contract = aContractFor(partnerName);
+        contractService.rejectContract(contract.getId());
+        return contractService.find(contract.getId());
+    }
+
+    public ContractAttachmentDTO aProposedAttachmentFor(Contract contract) {
+        return contractService.proposeAttachment(contract.getId(), new ContractAttachmentDTO());
+    }
+
+    public ContractAttachmentDTO anAttachmentAcceptedByOneSideFor(Contract contract) {
+        ContractAttachmentDTO contractAttachmentDTO = aProposedAttachmentFor(contract);
+        contractService.acceptAttachment(contractAttachmentDTO.getId());
+        return contractAttachmentDTO;
+    }
+
+    public ContractAttachmentDTO anAttachmentAcceptedByBothSidesFor(Contract contract) {
+        ContractAttachmentDTO contractAttachmentDTO = anAttachmentAcceptedByOneSideFor(contract);
+        contractService.acceptAttachment(contractAttachmentDTO.getId());
+        return contractAttachmentDTO;
+    }
+
+    public ContractAttachmentDTO aRejectedAttachmentFor(Contract contract) {
+        ContractAttachmentDTO contractAttachmentDTO = aProposedAttachmentFor(contract);
+        contractService.rejectAttachment(contractAttachmentDTO.getId());
+        return contractAttachmentDTO;
     }
 }
