@@ -1,13 +1,10 @@
 package io.legacyfighter.cabs.dto;
 
-import io.legacyfighter.cabs.entity.ContractAttachment;
+import io.legacyfighter.cabs.entity.contract.ContractAttachment;
 
 import java.time.Instant;
 
 public class ContractAttachmentDTO {
-
-    public ContractAttachmentDTO() {
-    }
 
     private Long id;
 
@@ -25,6 +22,8 @@ public class ContractAttachmentDTO {
 
     private ContractAttachment.Status status;
 
+    public ContractAttachmentDTO() {
+    }
 
     public ContractAttachmentDTO(ContractAttachment attachment) {
         this.id = attachment.getId();
@@ -100,6 +99,4 @@ public class ContractAttachmentDTO {
     public void setStatus(ContractAttachment.Status status) {
         this.status = status;
     }
-
-
 }

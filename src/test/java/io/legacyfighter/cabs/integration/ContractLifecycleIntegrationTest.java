@@ -3,8 +3,8 @@ package io.legacyfighter.cabs.integration;
 import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.dto.ContractAttachmentDTO;
 import io.legacyfighter.cabs.dto.ContractDTO;
-import io.legacyfighter.cabs.entity.Contract;
-import io.legacyfighter.cabs.entity.ContractAttachment;
+import io.legacyfighter.cabs.entity.contract.Contract;
+import io.legacyfighter.cabs.entity.contract.ContractAttachment;
 import io.legacyfighter.cabs.service.ContractService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -241,7 +242,8 @@ class ContractLifecycleIntegrationTest {
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
 
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, result.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getId()).isEqualTo(result.getId());
         assertThat(loadedAttachment.getData()).isEqualTo(contractAttachmentDTO.getData());
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.PROPOSED);
@@ -260,12 +262,13 @@ class ContractLifecycleIntegrationTest {
         ContractAttachmentDTO contractAttachmentDTO = aContractAttachmentDTO();
 
         // when
-        contractService.proposeAttachment(contract.getId(), contractAttachmentDTO);
+        ContractAttachmentDTO result = contractService.proposeAttachment(contract.getId(), contractAttachmentDTO);
 
         // then
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, result.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.PROPOSED);
     }
 
@@ -277,12 +280,13 @@ class ContractLifecycleIntegrationTest {
         ContractAttachmentDTO contractAttachmentDTO = aContractAttachmentDTO();
 
         // when
-        contractService.proposeAttachment(contract.getId(), contractAttachmentDTO);
+        ContractAttachmentDTO result = contractService.proposeAttachment(contract.getId(), contractAttachmentDTO);
 
         // then
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, result.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.PROPOSED);
     }
 
@@ -306,7 +310,8 @@ class ContractLifecycleIntegrationTest {
         // then
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
         assertThat(loadedAttachment.getRejectedAt()).isNull(); // TODO should not be?
     }
@@ -324,7 +329,8 @@ class ContractLifecycleIntegrationTest {
         // then
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
         assertThat(loadedAttachment.getRejectedAt()).isNull(); // TODO should not be?
     }
@@ -342,7 +348,8 @@ class ContractLifecycleIntegrationTest {
         // then
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
         assertThat(loadedAttachment.getRejectedAt()).isNull(); // TODO should not be?
     }
@@ -360,7 +367,8 @@ class ContractLifecycleIntegrationTest {
         // then
         ContractDTO loadedContract = loadContract(contract);
         assertThat(loadedContract.getAttachments()).hasSize(1);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
         assertThat(loadedAttachment.getRejectedAt()).isNull(); // TODO should not be?
     }
@@ -377,7 +385,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
         assertThat(loadedAttachment.getRejectedAt()).isNull(); // TODO should not be?
     }
@@ -394,7 +403,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
         assertThat(loadedAttachment.getRejectedAt()).isNull(); // TODO should not be?
     }
@@ -418,7 +428,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
         assertThat(loadedAttachment.getAcceptedAt()).isNull(); // TODO should not be?
     }
@@ -435,7 +446,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES);
         assertThat(loadedAttachment.getAcceptedAt()).isNull(); // TODO should not be?
     }
@@ -452,7 +464,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
         assertThat(loadedAttachment.getAcceptedAt()).isNull(); // TODO should not be?
     }
@@ -469,7 +482,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
         assertThat(loadedAttachment.getAcceptedAt()).isNull(); // TODO should not be?
     }
@@ -486,7 +500,8 @@ class ContractLifecycleIntegrationTest {
 
         // then
         ContractDTO loadedContract = loadContract(contract);
-        ContractAttachmentDTO loadedAttachment = loadedContract.getAttachments().get(0);
+        ContractAttachmentDTO loadedAttachment = findContractAttachment(loadedContract, contractAttachmentDTO.getId());
+        assertThat(loadedAttachment).isNotNull();
         assertThat(loadedAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
         assertThat(loadedAttachment.getAcceptedAt()).isNull(); // TODO should not be?
     }
@@ -619,5 +634,12 @@ class ContractLifecycleIntegrationTest {
 
     private ContractDTO loadContract(Contract contract) {
         return contractService.findDto(contract.getId());
+    }
+
+    private ContractAttachmentDTO findContractAttachment(ContractDTO contract, Long attachmentId) {
+        return contract.getAttachments().stream()
+                .filter(attachmentDTO -> Objects.equals(attachmentDTO.getId(), attachmentId))
+                .findFirst()
+                .orElse(null);
     }
 }

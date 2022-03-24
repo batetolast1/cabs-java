@@ -1,4 +1,4 @@
-package io.legacyfighter.cabs.entity;
+package io.legacyfighter.cabs.entity.contract;
 
 import io.legacyfighter.cabs.common.BaseEntity;
 
@@ -9,18 +9,21 @@ import java.time.Instant;
 public class ContractAttachment extends BaseEntity {
 
     public enum Status {
-        PROPOSED, ACCEPTED_BY_ONE_SIDE, ACCEPTED_BY_BOTH_SIDES, REJECTED
+        PROPOSED, ACCEPTED_BY_ONE_SIDE, ACCEPTED_BY_BOTH_SIDES, REJECTED;
     }
 
-    public ContractAttachment() {
-    }
+    @ManyToOne
+    private Contract contract;
 
     @Lob
-    @Column(name = "data", columnDefinition="BLOB")
+    @Column(name = "data", columnDefinition = "BLOB")
     private byte[] data;
 
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
     @Column(nullable = false)
-    private Instant creationDate = Instant.now();
+    private Instant creationDate;
 
     private Instant acceptedAt;
 
@@ -28,18 +31,25 @@ public class ContractAttachment extends BaseEntity {
 
     private Instant changeDate;
 
-    @Enumerated(EnumType.STRING)
-    private Status status = Status.PROPOSED;
+    public ContractAttachment() {
+    }
 
-    @ManyToOne
-    private Contract contract;
+    public ContractAttachment(Contract contract, byte[] data) {
+        this.contract = contract;
+        this.data = data;
+        this.status = Status.PROPOSED;
+        this.creationDate = Instant.now();
+    }
 
+    void setId(Long id) {
+        this.id = id;
+    }
 
     public byte[] getData() {
         return data;
     }
 
-    public void setData(byte[] data) {
+    void setData(byte[] data) {
         this.data = data;
     }
 
@@ -47,7 +57,7 @@ public class ContractAttachment extends BaseEntity {
         return creationDate;
     }
 
-    public void setCreationDate(Instant creationDate) {
+    void setCreationDate(Instant creationDate) {
         this.creationDate = creationDate;
     }
 
@@ -55,7 +65,7 @@ public class ContractAttachment extends BaseEntity {
         return acceptedAt;
     }
 
-    public void setAcceptedAt(Instant acceptedAt) {
+    void setAcceptedAt(Instant acceptedAt) {
         this.acceptedAt = acceptedAt;
     }
 
@@ -63,7 +73,7 @@ public class ContractAttachment extends BaseEntity {
         return rejectedAt;
     }
 
-    public void setRejectedAt(Instant rejectedAt) {
+    void setRejectedAt(Instant rejectedAt) {
         this.rejectedAt = rejectedAt;
     }
 
@@ -71,7 +81,7 @@ public class ContractAttachment extends BaseEntity {
         return changeDate;
     }
 
-    public void setChangeDate(Instant changeDate) {
+    void setChangeDate(Instant changeDate) {
         this.changeDate = changeDate;
     }
 
@@ -79,7 +89,7 @@ public class ContractAttachment extends BaseEntity {
         return status;
     }
 
-    public void setStatus(Status status) {
+    void setStatus(Status status) {
         this.status = status;
     }
 
@@ -87,7 +97,7 @@ public class ContractAttachment extends BaseEntity {
         return contract;
     }
 
-    public void setContract(Contract contract) {
+    void setContract(Contract contract) {
         this.contract = contract;
     }
 

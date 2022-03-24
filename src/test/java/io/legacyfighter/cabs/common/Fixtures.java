@@ -3,6 +3,7 @@ package io.legacyfighter.cabs.common;
 import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.dto.*;
 import io.legacyfighter.cabs.entity.*;
+import io.legacyfighter.cabs.entity.contract.Contract;
 import io.legacyfighter.cabs.money.Money;
 import io.legacyfighter.cabs.repository.AddressRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
