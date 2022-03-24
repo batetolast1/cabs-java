@@ -4,26 +4,23 @@ import io.legacyfighter.cabs.common.BaseEntity;
 
 import javax.persistence.*;
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
-public class ContractAttachment extends BaseEntity {
+public class ContractAttachmentDecision extends BaseEntity {
 
     public enum Status {
-        PROPOSED, ACCEPTED_BY_ONE_SIDE, ACCEPTED_BY_BOTH_SIDES, REJECTED;
+        PROPOSED, ACCEPTED_BY_ONE_SIDE, ACCEPTED_BY_BOTH_SIDES, REJECTED
     }
+
+    @Column(nullable = false)
+    private UUID contractAttachmentNo;
 
     @ManyToOne
     private Contract contract;
 
-    @Lob
-    @Column(name = "data", columnDefinition = "BLOB")
-    private byte[] data;
-
     @Enumerated(EnumType.STRING)
     private Status status;
-
-    @Column(nullable = false)
-    private Instant creationDate;
 
     private Instant acceptedAt;
 
@@ -31,34 +28,29 @@ public class ContractAttachment extends BaseEntity {
 
     private Instant changeDate;
 
-    public ContractAttachment() {
+    public ContractAttachmentDecision() {
     }
 
-    public ContractAttachment(Contract contract, byte[] data) {
+    public ContractAttachmentDecision(Contract contract) {
         this.contract = contract;
-        this.data = data;
+        this.contractAttachmentNo = UUID.randomUUID();
         this.status = Status.PROPOSED;
-        this.creationDate = Instant.now();
     }
 
-    void setId(Long id) {
-        this.id = id;
+    public UUID getContractAttachmentNo() {
+        return contractAttachmentNo;
     }
 
-    public byte[] getData() {
-        return data;
+    public Contract getContract() {
+        return contract;
     }
 
-    void setData(byte[] data) {
-        this.data = data;
+    public Status getStatus() {
+        return status;
     }
 
-    public Instant getCreationDate() {
-        return creationDate;
-    }
-
-    void setCreationDate(Instant creationDate) {
-        this.creationDate = creationDate;
+    void setStatus(Status status) {
+        this.status = status;
     }
 
     public Instant getAcceptedAt() {
@@ -85,30 +77,14 @@ public class ContractAttachment extends BaseEntity {
         this.changeDate = changeDate;
     }
 
-    public Status getStatus() {
-        return status;
-    }
-
-    void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public Contract getContract() {
-        return contract;
-    }
-
-    void setContract(Contract contract) {
-        this.contract = contract;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
 
-        if (!(o instanceof ContractAttachment))
+        if (!(o instanceof ContractAttachmentDecision))
             return false;
 
-        ContractAttachment other = (ContractAttachment) o;
+        ContractAttachmentDecision other = (ContractAttachmentDecision) o;
 
         return this.getId() != null &&
                 this.getId().equals(other.getId());

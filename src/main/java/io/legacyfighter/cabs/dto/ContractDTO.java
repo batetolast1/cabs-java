@@ -2,11 +2,13 @@ package io.legacyfighter.cabs.dto;
 
 import io.legacyfighter.cabs.entity.contract.Contract;
 import io.legacyfighter.cabs.entity.contract.Contract.Status;
-import io.legacyfighter.cabs.entity.contract.ContractAttachment;
+import io.legacyfighter.cabs.entity.contract.ContractAttachmentData;
+import io.legacyfighter.cabs.entity.contract.ContractAttachmentDecision;
 
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public class ContractDTO {
 
@@ -33,7 +35,7 @@ public class ContractDTO {
     public ContractDTO() {
     }
 
-    public ContractDTO(Contract contract, Set<ContractAttachment> contractAttachments) {
+    public ContractDTO(Contract contract, Set<ContractAttachmentData> contractAttachments) {
         this.setContractNo(contract.getContractNo());
         this.setAcceptedAt(contract.getAcceptedAt());
         this.setRejectedAt(contract.getRejectedAt());
@@ -42,8 +44,10 @@ public class ContractDTO {
         this.setStatus(contract.getStatus());
         this.setPartnerName(contract.getPartnerName());
         this.setSubject(contract.getSubject());
-        for (ContractAttachment attachment : contractAttachments) {
-            this.attachments.add(new ContractAttachmentDTO(attachment));
+        for (ContractAttachmentData contractAttachmentData : contractAttachments) {
+            UUID contractAttachmentNo = contractAttachmentData.getContractAttachmentNo();
+            ContractAttachmentDecision attachment = contract.findContractAttachmentDecision(contractAttachmentNo);
+            this.attachments.add(new ContractAttachmentDTO(attachment, contractAttachmentData));
         }
         this.setId(contract.getId());
     }

@@ -2,15 +2,16 @@ package io.legacyfighter.cabs.entity.contract;
 
 import org.junit.jupiter.api.Test;
 
+import javax.persistence.EntityNotFoundException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class ContractTest {
-
-    private static final long CONTRACT_ATTACHMENT_ID = 1L;
 
     @Test
     void canCreateContract() {
@@ -28,7 +29,7 @@ class ContractTest {
         assertThat(contract.getContractNo()).isEqualTo(contractNo);
         assertThat(contract.getCreationDate()).isNotNull();
         assertThat(contract.getStatus()).isEqualTo(Contract.Status.NEGOTIATIONS_IN_PROGRESS);
-        assertThat(contract.getAttachments()).isEmpty();
+        assertThat(contract.getContractAttachmentDecisions()).isEmpty();
         assertThat(contract.getChangeDate()).isNull();
         assertThat(contract.getAcceptedAt()).isNull();
         assertThat(contract.getRejectedAt()).isNull();
@@ -130,134 +131,202 @@ class ContractTest {
         Contract contract = aContract();
 
         // when
-        contract.proposeAttachment(new byte[]{1, 2, 3});
+        contract.proposeAttachment();
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, null);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.PROPOSED);
-
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contract.getContractAttachmentNos().get(0));
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.PROPOSED);
     }
+
+    @Test
+    void cannotAcceptNonExistingAttachment() {
+        // given
+        UUID contractAttachmentNo = UUID.randomUUID();
+
+        // when
+        Contract contract = aContract();
+
+        // when
+        assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(() -> contract.acceptAttachment(contractAttachmentNo));
+    }
+
 
     @Test
     void canAcceptProposedAttachment() {
         // when
         Contract contract = aContractWithProposedAttachment();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.acceptAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.ACCEPTED_BY_ONE_SIDE);
     }
 
     @Test
     void canAcceptRejectedAttachment() {
         // when
         Contract contract = aContractWithRejectedAttachment();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.acceptAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.ACCEPTED_BY_ONE_SIDE);
     }
 
     @Test
     void canAcceptAttachmentAcceptedByOneSide() {
         // when
         Contract contract = aContractWithAttachmentAcceptedByOneSide();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.acceptAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.ACCEPTED_BY_BOTH_SIDES);
     }
 
     @Test
     void canAcceptAttachmentAcceptedByBothSides() {
         // when
         Contract contract = aContractWithAttachmentAcceptedByBothSides();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.acceptAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.ACCEPTED_BY_BOTH_SIDES);
+    }
+
+    @Test
+    void cannotRejectNonExistingAttachment() {
+        // given
+        UUID contractAttachmentNo = UUID.randomUUID();
+
+        // when
+        Contract contract = aContract();
+
+        // when
+        assertThatExceptionOfType(EntityNotFoundException.class)
+                .isThrownBy(() -> contract.rejectAttachment(contractAttachmentNo));
     }
 
     @Test
     void canRejectProposedAttachment() {
         // when
         Contract contract = aContractWithProposedAttachment();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.rejectAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.rejectAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.REJECTED);
     }
 
     @Test
     void canRejectRejectedAttachment() {
         // when
         Contract contract = aContractWithRejectedAttachment();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.rejectAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.rejectAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.REJECTED);
     }
 
     @Test
     void canRejectAttachmentAcceptedByOneSide() {
         // when
         Contract contract = aContractWithAttachmentAcceptedByOneSide();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.rejectAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.rejectAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.REJECTED);
     }
 
     @Test
     void canRejectAttachmentAcceptedByBothSides() {
         // when
         Contract contract = aContractWithAttachmentAcceptedByBothSides();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
 
         // when
-        contract.rejectAttachment(CONTRACT_ATTACHMENT_ID);
+        contract.rejectAttachment(contractAttachmentNo);
 
         // then
-        assertThat(contract.getAttachments()).hasSize(1);
-        ContractAttachment contractAttachment = getContractAttachment(contract, CONTRACT_ATTACHMENT_ID);
-        assertThat(contractAttachment.getStatus()).isEqualTo(ContractAttachment.Status.REJECTED);
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+        ContractAttachmentDecision contractAttachmentDecision = getContractAttachment(contract, contractAttachmentNo);
+        assertThat(contractAttachmentDecision.getStatus()).isEqualTo(ContractAttachmentDecision.Status.REJECTED);
     }
 
-    private ContractAttachment getContractAttachment(Contract contract, Long id) {
-        Optional<ContractAttachment> optionalLoadedAttachment = contract.getAttachments()
+    @Test
+    void canRemoveAttachment() {
+        // when
+        Contract contract = aContractWithProposedAttachment();
+        // and
+        UUID contractAttachmentNo = contract.getContractAttachmentNos().get(0);
+
+        // when
+        contract.removeAttachment(contractAttachmentNo);
+
+        // then
+        assertThat(contract.getContractAttachmentDecisions()).isEmpty();
+    }
+
+    @Test
+    void cannotRemoveNonExistingAttachment() {
+        // when
+        Contract contract = aContractWithProposedAttachment();
+
+        // when
+        contract.removeAttachment(UUID.randomUUID());
+
+        // then
+        assertThat(contract.getContractAttachmentDecisions()).hasSize(1);
+    }
+
+    private ContractAttachmentDecision getContractAttachment(Contract contract, UUID contractAttachmentNo) {
+        Optional<ContractAttachmentDecision> optionalContractAttachmentDecision = contract.getContractAttachmentDecisions()
                 .stream()
-                .filter(a -> Objects.equals(a.getId(), id))
+                .filter(a -> Objects.equals(a.getContractAttachmentNo(), contractAttachmentNo))
                 .findFirst();
-        assertThat(optionalLoadedAttachment).isPresent();
-        return optionalLoadedAttachment.get();
+        assertThat(optionalContractAttachmentDecision).isPresent();
+        return optionalContractAttachmentDecision.get();
     }
 
     private Contract aContract() {
@@ -281,28 +350,29 @@ class ContractTest {
 
     private Contract aContractWithProposedAttachment() {
         Contract contract = aContract();
-        contract.proposeAttachment(null);
-        ContractAttachment attachment = contract.findAttachment(null);
-        attachment.setId(CONTRACT_ATTACHMENT_ID);
+        contract.proposeAttachment();
         return contract;
     }
 
     private Contract aContractWithRejectedAttachment() {
         Contract contract = aContractWithProposedAttachment();
-        contract.rejectAttachment(CONTRACT_ATTACHMENT_ID);
+        List<UUID> attachmentIds = contract.getContractAttachmentNos();
+        contract.rejectAttachment(attachmentIds.get(0));
         return contract;
     }
 
     private Contract aContractWithAttachmentAcceptedByOneSide() {
         Contract contract = aContractWithProposedAttachment();
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
+        List<UUID> attachmentIds = contract.getContractAttachmentNos();
+        contract.acceptAttachment(attachmentIds.get(0));
         return contract;
     }
 
     private Contract aContractWithAttachmentAcceptedByBothSides() {
         Contract contract = aContractWithProposedAttachment();
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
-        contract.acceptAttachment(CONTRACT_ATTACHMENT_ID);
+        List<UUID> attachmentIds = contract.getContractAttachmentNos();
+        contract.acceptAttachment(attachmentIds.get(0));
+        contract.acceptAttachment(attachmentIds.get(0));
         return contract;
     }
 }

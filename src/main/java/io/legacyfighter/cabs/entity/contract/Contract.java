@@ -1,18 +1,19 @@
 package io.legacyfighter.cabs.entity.contract;
 
 import io.legacyfighter.cabs.common.BaseEntity;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 public class Contract extends BaseEntity {
 
     public enum Status {
-        NEGOTIATIONS_IN_PROGRESS, REJECTED, ACCEPTED;
+        NEGOTIATIONS_IN_PROGRESS, REJECTED, ACCEPTED
     }
 
     private String partnerName;
@@ -37,7 +38,8 @@ public class Contract extends BaseEntity {
 
     @OneToMany(mappedBy = "contract",
             cascade = CascadeType.ALL)
-    private Set<ContractAttachment> attachments;
+    @Fetch(value = FetchMode.JOIN)
+    private Set<ContractAttachmentDecision> contractAttachmentDecisions;
 
     public Contract() {
     }
@@ -48,7 +50,7 @@ public class Contract extends BaseEntity {
         this.contractNo = contractNo;
         this.creationDate = Instant.now();
         this.status = Status.NEGOTIATIONS_IN_PROGRESS;
-        this.attachments = new HashSet<>();
+        this.contractAttachmentDecisions = new HashSet<>();
     }
 
     public String getPartnerName() {
@@ -83,8 +85,8 @@ public class Contract extends BaseEntity {
         return rejectedAt;
     }
 
-    Set<ContractAttachment> getAttachments() {
-        return attachments;
+    Set<ContractAttachmentDecision> getContractAttachmentDecisions() {
+        return contractAttachmentDecisions;
     }
 
     @Override
@@ -101,7 +103,7 @@ public class Contract extends BaseEntity {
     }
 
     public void accept() {
-        if (!isEveryAttachmentAcceptedByBothSides()) {
+        if (!isEveryContractAttachmentDecisionAcceptedByBothSides()) {
             throw new IllegalStateException("Not all attachments accepted by both sides");
         }
 
@@ -112,38 +114,49 @@ public class Contract extends BaseEntity {
         this.status = Status.REJECTED;
     }
 
-    public ContractAttachment proposeAttachment(byte[] data) {
-        ContractAttachment attachment = new ContractAttachment(this, data);
-        this.attachments.add(attachment);
-        return attachment;
+    public UUID proposeAttachment() {
+        ContractAttachmentDecision contractAttachmentDecision = new ContractAttachmentDecision(this);
+        this.contractAttachmentDecisions.add(contractAttachmentDecision);
+        return contractAttachmentDecision.getContractAttachmentNo();
     }
 
-    public void acceptAttachment(Long attachmentId) {
-        ContractAttachment attachment = findAttachment(attachmentId);
+    public void acceptAttachment(UUID contractAttachmentNo) {
+        ContractAttachmentDecision contractAttachmentDecision = findContractAttachmentDecision(contractAttachmentNo);
 
-        if (Objects.equals(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE, attachment.getStatus())
-                || Objects.equals(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES, attachment.getStatus())) {
-            attachment.setStatus(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES);
+        if (Objects.equals(ContractAttachmentDecision.Status.ACCEPTED_BY_ONE_SIDE, contractAttachmentDecision.getStatus())
+                || Objects.equals(ContractAttachmentDecision.Status.ACCEPTED_BY_BOTH_SIDES, contractAttachmentDecision.getStatus())) {
+            contractAttachmentDecision.setStatus(ContractAttachmentDecision.Status.ACCEPTED_BY_BOTH_SIDES);
         } else {
-            attachment.setStatus(ContractAttachment.Status.ACCEPTED_BY_ONE_SIDE);
+            contractAttachmentDecision.setStatus(ContractAttachmentDecision.Status.ACCEPTED_BY_ONE_SIDE);
         }
     }
 
-    public void rejectAttachment(Long attachmentId) {
-        ContractAttachment attachment = findAttachment(attachmentId);
-        attachment.setStatus(ContractAttachment.Status.REJECTED);
+    public void rejectAttachment(UUID contractAttachmentNo) {
+        ContractAttachmentDecision contractAttachmentDecision = findContractAttachmentDecision(contractAttachmentNo);
+        contractAttachmentDecision.setStatus(ContractAttachmentDecision.Status.REJECTED);
     }
 
-    private boolean isEveryAttachmentAcceptedByBothSides() {
-        return this.attachments.stream()
-                .allMatch(attachment -> Objects.equals(ContractAttachment.Status.ACCEPTED_BY_BOTH_SIDES, attachment.getStatus()));
+    public void removeAttachment(UUID contractAttachmentNo) {
+        this.contractAttachmentDecisions.removeIf(contractAttachmentDecision -> contractAttachmentDecision.getContractAttachmentNo().equals(contractAttachmentNo));
     }
 
-    ContractAttachment findAttachment(Long attachmentId) {
-        return this.attachments
+    public ContractAttachmentDecision findContractAttachmentDecision(UUID contractAttachmentNo) {
+        return this.contractAttachmentDecisions
                 .stream()
-                .filter(attachment -> Objects.equals(attachment.getId(), attachmentId))
+                .filter(contractAttachmentDecision -> Objects.equals(contractAttachmentDecision.getContractAttachmentNo(), contractAttachmentNo))
                 .findFirst()
                 .orElseThrow(EntityNotFoundException::new);
+    }
+
+    private boolean isEveryContractAttachmentDecisionAcceptedByBothSides() {
+        return this.contractAttachmentDecisions.stream()
+                .allMatch(contractAttachmentDecision -> Objects.equals(ContractAttachmentDecision.Status.ACCEPTED_BY_BOTH_SIDES, contractAttachmentDecision.getStatus()));
+    }
+
+    public List<UUID> getContractAttachmentNos() {
+        return this.contractAttachmentDecisions
+                .stream()
+                .map(ContractAttachmentDecision::getContractAttachmentNo)
+                .collect(Collectors.toList());
     }
 }
