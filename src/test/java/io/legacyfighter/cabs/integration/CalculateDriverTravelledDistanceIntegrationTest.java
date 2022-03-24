@@ -1,9 +1,9 @@
 package io.legacyfighter.cabs.integration;
 
 import io.legacyfighter.cabs.common.Fixtures;
-import io.legacyfighter.cabs.distance.Distance;
-import io.legacyfighter.cabs.driverreport.travelleddistance.TravelledDistanceService;
-import io.legacyfighter.cabs.entity.Driver;
+import io.legacyfighter.cabs.geolocation.Distance;
+import io.legacyfighter.cabs.driverfleet.driverreport.travelleddistance.TravelledDistanceService;
+import io.legacyfighter.cabs.driverfleet.Driver;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
