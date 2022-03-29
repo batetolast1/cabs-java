@@ -5,9 +5,15 @@ import javax.persistence.*;
 @Entity
 public class DriverAttribute {
 
-
     public enum DriverAttributeName {
-        PENALTY_POINTS, NATIONALITY, YEARS_OF_EXPERIENCE, MEDICAL_EXAMINATION_EXPIRATION_DATE , MEDICAL_EXAMINATION_REMARKS, EMAIL, BIRTHPLACE, COMPANY_NAME
+        PENALTY_POINTS,
+        NATIONALITY,
+        YEARS_OF_EXPERIENCE,
+        MEDICAL_EXAMINATION_EXPIRATION_DATE,
+        MEDICAL_EXAMINATION_REMARKS,
+        EMAIL,
+        BIRTHPLACE,
+        COMPANY_NAME
     }
 
     @Id
@@ -26,7 +32,6 @@ public class DriverAttribute {
     private Driver driver;
 
     public DriverAttribute() {
-
     }
 
     public DriverAttribute(Driver driver, DriverAttributeName attr, String value) {

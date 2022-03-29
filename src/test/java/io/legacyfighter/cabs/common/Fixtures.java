@@ -105,6 +105,14 @@ public class Fixtures {
         return driverService.createDriver("9AAAA123456AA1AA", "last name", "first name", REGULAR, ACTIVE, "photo");
     }
 
+    public Driver aDriver(Driver.Status status, String firstName, String lastName, String license, String photo, Driver.Type type) {
+        return driverService.createDriver(license, lastName, firstName, type, status, photo);
+    }
+
+    public void driverHasAttribute(Driver driver, DriverAttribute.DriverAttributeName attributeName, String attributeValue) {
+        driverService.addAttribute(driver.getId(), attributeName, attributeValue);
+    }
+
     public void anActiveCarCategory(CarType.CarClass carClass) {
         CarTypeDTO carTypeDTO = new CarTypeDTO();
         carTypeDTO.setCarClass(carClass);
@@ -141,13 +149,22 @@ public class Fixtures {
         return clientRepository.save(client);
     }
 
-    public Claim aClaimFor(Client client, Transit transit) {
+    public Claim createClaim(Client client, Transit transit, String reason) {
         ClaimDTO claimDTO = new ClaimDTO();
         claimDTO.setClientId(client.getId());
         claimDTO.setTransitId(transit.getId());
-        claimDTO.setReason("reason");
+        claimDTO.setReason(reason);
         claimDTO.setIncidentDescription("incident description");
         return claimService.create(claimDTO);
+    }
+
+    public Claim createResolvedClaim(Client client, Transit transit, String reason) {
+        Claim claim = createClaim(client, transit, reason);
+        return claimService.tryToResolveAutomatically(claim.getId());
+    }
+
+    public Claim aClaimFor(Client client, Transit transit) {
+        return createClaim(client, transit, "reason");
     }
 
     public Client aClientWithClaims(Client.Type type, int howManyClaims) {
