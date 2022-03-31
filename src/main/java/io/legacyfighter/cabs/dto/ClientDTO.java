@@ -19,16 +19,29 @@ public class ClientDTO {
     private Client.ClientType clientType;
 
     public ClientDTO() {
+    }
 
+    public ClientDTO(Long id,
+                     Client.Type type,
+                     String name,
+                     String lastName,
+                     Client.PaymentType defaultPaymentType,
+                     Client.ClientType clientType) {
+        this.id = id;
+        this.type = type;
+        this.name = name;
+        this.lastName = lastName;
+        this.defaultPaymentType = defaultPaymentType;
+        this.clientType = clientType;
     }
 
     public ClientDTO(Client client) {
-        this.id = client.getId();
-        this.type = client.getType();
-        this.name = client.getName();
-        this.lastName = client.getLastName();
-        this.defaultPaymentType = client.getDefaultPaymentType();
-        this.clientType = client.getClientType();
+        this(client.getId(),
+                client.getType(),
+                client.getName(),
+                client.getLastName(),
+                client.getDefaultPaymentType(),
+                client.getClientType());
     }
 
     public String getName() {

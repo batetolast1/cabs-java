@@ -71,9 +71,10 @@ class CreateDriverReportIntegrationTest {
     @Test
     void canCreateDriverReport() {
         // given
-        Client client = fixtures.aClient();
+        Client client = fixtures.aClient(Client.Type.NORMAL, "Alex", "Vega", Client.PaymentType.MONTHLY_INVOICE, Client.ClientType.INDIVIDUAL);
         // and
         Driver driver = fixtures.aDriver(Driver.Status.ACTIVE, "John", "Doe", "9AAAA123456AA1AA", "photo", Driver.Type.REGULAR);
+        Driver additionalDriver = fixtures.aDriver(Driver.Status.ACTIVE, "Patrick", "Boyle", "AAAAA123456AA1AA", "photo", Driver.Type.REGULAR);
         // and
         fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 50, new Money(10));
         // and
@@ -89,9 +90,9 @@ class CreateDriverReportIntegrationTest {
         Address from = anAddress("Poland", "Poznań", "Antoninek", "Bożeny", 32, 1, "61-054", "home", 10, 20);
         Address to = anAddress("Germany", "Berlin", "Downtown", "Strasse", 12, 2, "61-053", "work", 10.1, 20.1);
         // and
-        Transit transit = driverHasCompletedTransitInSession(driver, client, "ABC123", CarType.CarClass.VAN, "Volkswagen Golf", from, to);
+        List<Transit> transits = driverHasCompletedTransitsInSession(driver, client, "ABC123", CarType.CarClass.VAN, "Volkswagen Golf", from, to, 2, additionalDriver);
         // and
-        Claim claim = fixtures.createResolvedClaim(client, transit, "too fast");
+        Claim claim = fixtures.createResolvedClaim(client, transits.get(0), "too fast");
 
         // when
         DriverReport driverReport = driverReportController.loadReportForDriver(driver.getId(), 0);
@@ -124,102 +125,124 @@ class CreateDriverReportIntegrationTest {
         assertThat(driverSessionDTO1.getCarBrand()).isEqualTo("Volkswagen Golf");
         // and
         List<TransitDTO> transitDTOS = driverReport.getSessions().get(driverSessionDTO1);
-        assertThat(transitDTOS).hasSize(1);
-        TransitDTO transitDTO = transitDTOS.get(0);
-        assertThat(transitDTO.getId()).isEqualTo(transit.getId());
-        assertThat(transitDTO.getTariff()).isEqualTo("Standard");
-        assertThat(transitDTO.getStatus()).isEqualTo(Transit.Status.COMPLETED);
-        assertThat(transitDTO.getDistance("km")).isEqualTo("42km");
-        assertThat(transitDTO.getKmRate()).isEqualTo(1.0f);
-        assertThat(transitDTO.getPrice()).isEqualTo(BigDecimal.valueOf(5100));
-        assertThat(transitDTO.getDriverFee()).isEqualTo(BigDecimal.valueOf(5050));
-        assertThat(transitDTO.getEstimatedPrice()).isEqualTo(BigDecimal.valueOf(5100));
-        assertThat(transitDTO.getDateTime()).isEqualTo(TODAY);
-        assertThat(transitDTO.getPublished()).isEqualTo(TODAY);
-        assertThat(transitDTO.getAcceptedAt()).isEqualTo(TODAY);
-        assertThat(transitDTO.getStarted()).isAfter(TODAY);
-        assertThat(transitDTO.getCompleteAt()).isEqualTo(TODAY);
-        assertThat(transitDTO.getClaimDTO()).isNotNull();
-        assertThat(transitDTO.getProposedDrivers()).hasSize(1);
-        assertThat(transitDTO.getTo()).isNotNull();
-        assertThat(transitDTO.getFrom()).isNotNull();
-        assertThat(transitDTO.getCarClass()).isEqualTo(CarType.CarClass.VAN);
-        assertThat(transitDTO.getClientDTO()).isNotNull();
+        assertThat(transitDTOS).hasSize(2);
 
         // and
-        ClaimDTO claimDTO = transitDTO.getClaimDTO();
-        assertThat(claimDTO.getClaimID()).isEqualTo(claim.getId());
-        assertThat(claimDTO.getClientId()).isEqualTo(client.getId());
-        assertThat(claimDTO.getTransitId()).isEqualTo(transit.getId());
-        assertThat(claimDTO.getReason()).isEqualTo("too fast");
-        assertThat(claimDTO.getIncidentDescription()).isEqualTo("incident description");
-        assertThat(claimDTO.isDraft()).isFalse();
-        assertThat(claimDTO.getCreationDate()).isEqualTo(TODAY);
-        assertThat(claimDTO.getCompletionDate()).isAfter(TODAY);
-        assertThat(claimDTO.getChangeDate()).isAfter(TODAY);
-        assertThat(claimDTO.getStatus()).isEqualTo(Claim.Status.REFUNDED);
-        assertThat(claimDTO.getClaimNo()).isEqualTo("0---29/03/2022");
+        TransitDTO transitDTO1 = transitDTOS.get(0);
+        assertThat(transitDTO1.getId()).isEqualTo(transits.get(0).getId());
+        assertThat(transitDTO1.getTariff()).isEqualTo("Standard");
+        assertThat(transitDTO1.getStatus()).isEqualTo(Transit.Status.COMPLETED);
+        assertThat(transitDTO1.getDistance("km")).isEqualTo("42km");
+        assertThat(transitDTO1.getKmRate()).isEqualTo(1.0f);
+        assertThat(transitDTO1.getPrice()).isEqualTo(BigDecimal.valueOf(5100));
+        assertThat(transitDTO1.getDriverFee()).isEqualTo(BigDecimal.valueOf(5050));
+        assertThat(transitDTO1.getEstimatedPrice()).isEqualTo(BigDecimal.valueOf(5100));
+        assertThat(transitDTO1.getDateTime()).isEqualTo(TODAY);
+        assertThat(transitDTO1.getPublished()).isEqualTo(TODAY);
+        assertThat(transitDTO1.getAcceptedAt()).isEqualTo(TODAY);
+        assertThat(transitDTO1.getStarted()).isAfter(TODAY);
+        assertThat(transitDTO1.getCompleteAt()).isEqualTo(TODAY);
+        assertThat(transitDTO1.getClaimDTO()).isNotNull();
+        assertThat(transitDTO1.getProposedDrivers()).hasSize(2);
+        assertThat(transitDTO1.getTo()).isNotNull();
+        assertThat(transitDTO1.getFrom()).isNotNull();
+        assertThat(transitDTO1.getCarClass()).isEqualTo(CarType.CarClass.VAN);
+        assertThat(transitDTO1.getClientDTO()).isNotNull();
 
         // and
-        DriverDTO driverDTO = transitDTO.getProposedDrivers().get(0);
-        assertThat(driverDTO.getId()).isEqualTo(driver.getId());
-        assertThat(driverDTO.getFirstName()).isEqualTo("John");
-        assertThat(driverDTO.getLastName()).isEqualTo("Doe");
-        assertThat(driverDTO.getDriverLicense()).isEqualTo("9AAAA123456AA1AA");
-        assertThat(driverDTO.getPhoto()).isEqualTo("photo");
-        assertThat(driverDTO.getStatus()).isEqualTo(Driver.Status.ACTIVE);
-        assertThat(driverDTO.getType()).isEqualTo(Driver.Type.REGULAR);
+        ClaimDTO claimDTO1 = transitDTO1.getClaimDTO();
+        assertThat(claimDTO1.getClaimID()).isEqualTo(claim.getId());
+        assertThat(claimDTO1.getClientId()).isEqualTo(client.getId());
+        assertThat(claimDTO1.getTransitId()).isEqualTo(transits.get(0).getId());
+        assertThat(claimDTO1.getReason()).isEqualTo("too fast");
+        assertThat(claimDTO1.getIncidentDescription()).isEqualTo("incident description");
+        assertThat(claimDTO1.isDraft()).isFalse();
+        assertThat(claimDTO1.getCreationDate()).isEqualTo(TODAY);
+        assertThat(claimDTO1.getCompletionDate()).isAfter(TODAY);
+        assertThat(claimDTO1.getChangeDate()).isAfter(TODAY);
+        assertThat(claimDTO1.getStatus()).isEqualTo(Claim.Status.REFUNDED);
+        assertThat(claimDTO1.getClaimNo()).isEqualTo("0---29/03/2022");
 
         // and
-        AddressDTO toAddressDTO = transitDTO.getTo();
-        assertThat(toAddressDTO.getCountry()).isEqualTo("Germany");
-        assertThat(toAddressDTO.getDistrict()).isEqualTo("Downtown");
-        assertThat(toAddressDTO.getCity()).isEqualTo("Berlin");
-        assertThat(toAddressDTO.getStreet()).isEqualTo("Strasse");
-        assertThat(toAddressDTO.getBuildingNumber()).isEqualTo(12);
-        assertThat(toAddressDTO.getAdditionalNumber()).isEqualTo(2);
-        assertThat(toAddressDTO.getPostalCode()).isEqualTo("61-053");
-        assertThat(toAddressDTO.getName()).isEqualTo("work");
+        DriverDTO driverDTO1_1 = transitDTO1.getProposedDrivers().get(0);
+        assertThat(driverDTO1_1.getId()).isEqualTo(driver.getId());
+        assertThat(driverDTO1_1.getFirstName()).isEqualTo("John");
+        assertThat(driverDTO1_1.getLastName()).isEqualTo("Doe");
+        assertThat(driverDTO1_1.getDriverLicense()).isEqualTo("9AAAA123456AA1AA");
+        assertThat(driverDTO1_1.getPhoto()).isEqualTo("photo");
+        assertThat(driverDTO1_1.getStatus()).isEqualTo(Driver.Status.ACTIVE);
+        assertThat(driverDTO1_1.getType()).isEqualTo(Driver.Type.REGULAR);
 
-        AddressDTO fromAddressDTO = transitDTO.getFrom();
-        assertThat(fromAddressDTO.getCountry()).isEqualTo("Poland");
-        assertThat(fromAddressDTO.getDistrict()).isEqualTo("Antoninek");
-        assertThat(fromAddressDTO.getCity()).isEqualTo("Poznań");
-        assertThat(fromAddressDTO.getStreet()).isEqualTo("Bożeny");
-        assertThat(fromAddressDTO.getBuildingNumber()).isEqualTo(32);
-        assertThat(fromAddressDTO.getAdditionalNumber()).isEqualTo(1);
-        assertThat(fromAddressDTO.getPostalCode()).isEqualTo("61-054");
-        assertThat(fromAddressDTO.getName()).isEqualTo("home");
+        DriverDTO driverDTO1_2 = transitDTO1.getProposedDrivers().get(1);
+        assertThat(driverDTO1_2.getId()).isEqualTo(additionalDriver.getId());
+        assertThat(driverDTO1_2.getFirstName()).isEqualTo("Patrick");
+        assertThat(driverDTO1_2.getLastName()).isEqualTo("Boyle");
+        assertThat(driverDTO1_2.getDriverLicense()).isEqualTo("AAAAA123456AA1AA");
+        assertThat(driverDTO1_2.getPhoto()).isEqualTo("photo");
+        assertThat(driverDTO1_2.getStatus()).isEqualTo(Driver.Status.ACTIVE);
+        assertThat(driverDTO1_2.getType()).isEqualTo(Driver.Type.REGULAR);
 
         // and
-        ClientDTO clientDTO = transitDTO.getClientDTO();
-        assertThat(clientDTO.getId()).isEqualTo(client.getId());
-        assertThat(clientDTO.getType()).isNull();
-        assertThat(clientDTO.getName()).isNull();
-        assertThat(clientDTO.getLastName()).isNull();
-        assertThat(clientDTO.getDefaultPaymentType()).isNull();
-        assertThat(clientDTO.getClientType()).isNull();
+        AddressDTO toAddressDTO1 = transitDTO1.getTo();
+        assertThat(toAddressDTO1.getCountry()).isEqualTo("Germany");
+        assertThat(toAddressDTO1.getDistrict()).isEqualTo("Downtown");
+        assertThat(toAddressDTO1.getCity()).isEqualTo("Berlin");
+        assertThat(toAddressDTO1.getStreet()).isEqualTo("Strasse");
+        assertThat(toAddressDTO1.getBuildingNumber()).isEqualTo(12);
+        assertThat(toAddressDTO1.getAdditionalNumber()).isEqualTo(2);
+        assertThat(toAddressDTO1.getPostalCode()).isEqualTo("61-053");
+        assertThat(toAddressDTO1.getName()).isEqualTo("work");
+
+        AddressDTO fromAddressDTO1 = transitDTO1.getFrom();
+        assertThat(fromAddressDTO1.getCountry()).isEqualTo("Poland");
+        assertThat(fromAddressDTO1.getDistrict()).isEqualTo("Antoninek");
+        assertThat(fromAddressDTO1.getCity()).isEqualTo("Poznań");
+        assertThat(fromAddressDTO1.getStreet()).isEqualTo("Bożeny");
+        assertThat(fromAddressDTO1.getBuildingNumber()).isEqualTo(32);
+        assertThat(fromAddressDTO1.getAdditionalNumber()).isEqualTo(1);
+        assertThat(fromAddressDTO1.getPostalCode()).isEqualTo("61-054");
+        assertThat(fromAddressDTO1.getName()).isEqualTo("home");
+
+        // and
+        ClientDTO clientDTO1 = transitDTO1.getClientDTO();
+        assertThat(clientDTO1.getId()).isEqualTo(client.getId());
+        assertThat(clientDTO1.getType()).isEqualTo(Client.Type.NORMAL);
+        assertThat(clientDTO1.getName()).isEqualTo("Alex");
+        assertThat(clientDTO1.getLastName()).isEqualTo("Vega");
+        assertThat(clientDTO1.getDefaultPaymentType()).isEqualTo(Client.PaymentType.MONTHLY_INVOICE);
+        assertThat(clientDTO1.getClientType()).isEqualTo(Client.ClientType.INDIVIDUAL);
     }
 
-    private Transit driverHasCompletedTransitInSession(Driver driver,
-                                                       Client client,
-                                                       String plateNumber,
-                                                       CarType.CarClass carClass,
-                                                       String carBrand,
-                                                       Address from,
-                                                       Address to) {
+    private List<Transit> driverHasCompletedTransitsInSession(Driver driver,
+                                                              Client client,
+                                                              String plateNumber,
+                                                              CarType.CarClass carClass,
+                                                              String carBrand,
+                                                              Address from,
+                                                              Address to,
+                                                              int transitAmount,
+                                                              Driver additionalLoggedInDriver) {
         driverSessionService.logIn(driver.getId(), plateNumber, carClass, carBrand);
         driverTrackingService.registerPosition(driver.getId(), 10, 20);
 
-        Transit transit = transitService.createTransit(client.getId(), from, to, carClass);
-        transitService.publishTransit(transit.getId());
-        transitService.acceptTransit(driver.getId(), transit.getId());
-        transitService.startTransit(driver.getId(), transit.getId());
-        transitService.completeTransit(driver.getId(), transit.getId(), to);
+        driverSessionService.logIn(additionalLoggedInDriver.getId(), plateNumber, carClass, carBrand);
+        driverTrackingService.registerPosition(additionalLoggedInDriver.getId(), 10, 20);
+
+        List<Transit> transits = new ArrayList<>();
+        for (int i = 0; i < transitAmount; i++) {
+            Transit transit = transitService.createTransit(client.getId(), from, to, carClass);
+            transitService.publishTransit(transit.getId());
+            transitService.acceptTransit(driver.getId(), transit.getId());
+            transitService.startTransit(driver.getId(), transit.getId());
+            transitService.completeTransit(driver.getId(), transit.getId(), to);
+            transits.add(transit);
+        }
 
         driverSessionService.logOutCurrentSession(driver.getId());
 
-        return transit;
+        driverSessionService.logOutCurrentSession(additionalLoggedInDriver.getId());
+
+        return transits;
     }
 
     private Address anAddress(String country,

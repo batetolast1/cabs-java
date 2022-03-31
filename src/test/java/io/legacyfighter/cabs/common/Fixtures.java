@@ -143,9 +143,23 @@ public class Fixtures {
         return clientRepository.save(new Client());
     }
 
-    public Client aClient(Client.Type clientType) {
+    public Client aClient(Client.Type type) {
         Client client = new Client();
-        client.setType(clientType);
+        client.setType(type);
+        return clientRepository.save(client);
+    }
+
+    public Client aClient(Client.Type type,
+                          String name,
+                          String lastName,
+                          Client.PaymentType defaultPaymentType,
+                          Client.ClientType clientType) {
+        Client client = new Client();
+        client.setType(type);
+        client.setName(name);
+        client.setLastName(lastName);
+        client.setDefaultPaymentType(defaultPaymentType);
+        client.setClientType(clientType);
         return clientRepository.save(client);
     }
 

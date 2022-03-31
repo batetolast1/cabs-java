@@ -1,6 +1,5 @@
 package io.legacyfighter.cabs.dto;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,5 +37,7 @@ public class DriverReport {
         this.sessions = sessions;
     }
 
+    public void addAttribute(DriverAttributeDTO attribute) {
+        attributes.add(attribute);
+    }
 }
-

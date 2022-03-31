@@ -6,21 +6,6 @@ import java.util.Objects;
 
 public class AddressDTO {
 
-    public AddressDTO() {
-
-    }
-
-    public AddressDTO(Address a) {
-        country = a.getCountry();
-        district = a.getDistrict();
-        city = a.getCity();
-        street = a.getStreet();
-        buildingNumber = a.getBuildingNumber();
-        additionalNumber = a.getAdditionalNumber();
-        postalCode = a.getPostalCode();
-        name = a.getName();
-    }
-
     private String country;
 
     private String district;
@@ -37,11 +22,46 @@ public class AddressDTO {
 
     private String name;
 
-    public AddressDTO(String country, String city, String street, Integer buildingNumber) {
+    public AddressDTO() {
+    }
+
+    public AddressDTO(String country,
+                      String city,
+                      String street,
+                      Integer buildingNumber) {
         this.country = country;
         this.city = city;
         this.street = street;
         this.buildingNumber = buildingNumber;
+    }
+
+    public AddressDTO(String country,
+                      String district,
+                      String city,
+                      String street,
+                      Integer buildingNumber,
+                      Integer additionalNumber,
+                      String postalCode,
+                      String name) {
+        this.country = country;
+        this.district = district;
+        this.city = city;
+        this.street = street;
+        this.buildingNumber = buildingNumber;
+        this.additionalNumber = additionalNumber;
+        this.postalCode = postalCode;
+        this.name = name;
+    }
+
+    public AddressDTO(Address a) {
+        this(a.getCountry(),
+                a.getDistrict(),
+                a.getCity(),
+                a.getStreet(),
+                a.getBuildingNumber(),
+                a.getAdditionalNumber(),
+                a.getPostalCode(),
+                a.getName());
     }
 
     public String getCountry() {
@@ -108,19 +128,6 @@ public class AddressDTO {
         this.name = name;
     }
 
-    public Address toAddressEntity() {
-        Address address = new Address();
-        address.setAdditionalNumber(this.getAdditionalNumber());
-        address.setBuildingNumber(this.getBuildingNumber());
-        address.setCity(this.getCity());
-        address.setName(this.getName());
-        address.setStreet(this.getStreet());
-        address.setCountry(this.getCountry());
-        address.setPostalCode(this.getPostalCode());
-        address.setDistrict(this.getDistrict());
-        return address;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -132,5 +139,18 @@ public class AddressDTO {
     @Override
     public int hashCode() {
         return Objects.hash(country, district, city, street, buildingNumber, additionalNumber, postalCode, name);
+    }
+
+    public Address toAddressEntity() {
+        Address address = new Address();
+        address.setAdditionalNumber(this.getAdditionalNumber());
+        address.setBuildingNumber(this.getBuildingNumber());
+        address.setCity(this.getCity());
+        address.setName(this.getName());
+        address.setStreet(this.getStreet());
+        address.setCountry(this.getCountry());
+        address.setPostalCode(this.getPostalCode());
+        address.setDistrict(this.getDistrict());
+        return address;
     }
 }

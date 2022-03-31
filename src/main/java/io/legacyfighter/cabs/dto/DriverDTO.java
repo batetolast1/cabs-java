@@ -3,6 +3,7 @@ package io.legacyfighter.cabs.dto;
 import io.legacyfighter.cabs.entity.Driver;
 
 public class DriverDTO {
+
     private Long id;
 
     private String firstName;
@@ -18,14 +19,29 @@ public class DriverDTO {
     private Driver.Type type;
 
     public DriverDTO(Driver driver) {
-        this.id = driver.getId();
-        firstName = driver.getFirstName();
-        lastName = driver.getLastName();
-        driverLicense = driver.getDriverLicense().asString();
-        photo = driver.getPhoto();
-        status = driver.getStatus();
-        type = driver.getType();
+        this(driver.getId(),
+                driver.getFirstName(),
+                driver.getLastName(),
+                driver.getDriverLicense().asString(),
+                driver.getPhoto(),
+                driver.getStatus(),
+                driver.getType());
+    }
 
+    public DriverDTO(Long id,
+                     String firstName,
+                     String lastName,
+                     String driverLicense,
+                     String photo,
+                     Driver.Status status,
+                     Driver.Type type) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.driverLicense = driverLicense;
+        this.photo = photo;
+        this.status = status;
+        this.type = type;
     }
 
     public Long getId() {
@@ -83,6 +99,4 @@ public class DriverDTO {
     public void setType(Driver.Type type) {
         this.type = type;
     }
-
-
 }

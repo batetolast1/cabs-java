@@ -64,6 +64,11 @@ public class Transit extends BaseEntity {
     public Set<Driver> driversRejections = new HashSet<>();
 
     @ManyToMany
+    @JoinTable(
+            name = "transit_proposed_driver",
+            joinColumns = @JoinColumn(name = "transit_id"),
+            inverseJoinColumns = @JoinColumn(name = "proposed_driver_id")
+    )
     public Set<Driver> proposedDrivers = new HashSet<>();
 
     public Integer awaitingDriversResponses = 0;
