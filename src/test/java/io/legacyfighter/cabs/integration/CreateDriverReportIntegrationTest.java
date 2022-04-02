@@ -148,7 +148,7 @@ class CreateDriverReportIntegrationTest {
         assertThat(transitDTO1.getDateTime()).isEqualTo(TODAY);
         assertThat(transitDTO1.getPublished()).isEqualTo(TODAY);
         assertThat(transitDTO1.getAcceptedAt()).isEqualTo(TODAY);
-        assertThat(transitDTO1.getStarted()).isAfter(TODAY);
+        assertThat(transitDTO1.getStarted()).isEqualTo(TODAY);
         assertThat(transitDTO1.getCompleteAt()).isEqualTo(TODAY);
         assertThat(transitDTO1.getClaimDTO()).isNotNull();
         assertThat(transitDTO1.getProposedDrivers()).hasSize(2);
@@ -175,8 +175,8 @@ class CreateDriverReportIntegrationTest {
         assertThat(claimDTO1.getIncidentDescription()).isEqualTo("incident description");
         assertThat(claimDTO1.isDraft()).isFalse();
         assertThat(claimDTO1.getCreationDate()).isEqualTo(TODAY);
-        assertThat(claimDTO1.getCompletionDate()).isAfter(TODAY);
-        assertThat(claimDTO1.getChangeDate()).isAfter(TODAY);
+        assertThat(claimDTO1.getCompletionDate()).isEqualTo(TODAY);
+        assertThat(claimDTO1.getChangeDate()).isEqualTo(TODAY);
         assertThat(claimDTO1.getStatus()).isEqualTo(Claim.Status.REFUNDED);
         assertThat(claimDTO1.getClaimNo()).isEqualTo("0---29/03/2022");
 

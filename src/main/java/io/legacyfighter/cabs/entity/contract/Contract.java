@@ -44,11 +44,14 @@ public class Contract extends BaseEntity {
     public Contract() {
     }
 
-    public Contract(String partnerName, String subject, String contractNo) {
+    public Contract(String partnerName,
+                    String subject,
+                    String contractNo,
+                    Instant creationDate) {
         this.partnerName = partnerName;
         this.subject = subject;
         this.contractNo = contractNo;
-        this.creationDate = Instant.now();
+        this.creationDate = creationDate;
         this.status = Status.NEGOTIATIONS_IN_PROGRESS;
         this.contractAttachmentDecisions = new HashSet<>();
     }

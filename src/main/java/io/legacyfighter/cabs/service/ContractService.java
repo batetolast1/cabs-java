@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
@@ -21,10 +23,14 @@ public class ContractService {
 
     private final ContractAttachmentDataRepository contractAttachmentDataRepository;
 
+    private final Clock clock;
+
     public ContractService(ContractRepository contractRepository,
-                           ContractAttachmentDataRepository contractAttachmentDataRepository) {
+                           ContractAttachmentDataRepository contractAttachmentDataRepository,
+                           Clock clock) {
         this.contractRepository = contractRepository;
         this.contractAttachmentDataRepository = contractAttachmentDataRepository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -32,7 +38,7 @@ public class ContractService {
         int partnerContractsCount = contractRepository.countByPartnerName(contractDTO.getPartnerName()) + 1;
         String contractNo = "C/" + partnerContractsCount + "/" + contractDTO.getPartnerName();
 
-        Contract contract = new Contract(contractDTO.getPartnerName(), contractDTO.getSubject(), contractNo);
+        Contract contract = new Contract(contractDTO.getPartnerName(), contractDTO.getSubject(), contractNo, Instant.now(clock));
 
         return contractRepository.save(contract);
     }
@@ -73,7 +79,7 @@ public class ContractService {
 
         ContractAttachmentDecision contractAttachmentDecision = contract.findContractAttachmentDecision(contractAttachmentNo);
 
-        ContractAttachmentData contractAttachmentData = new ContractAttachmentData(contractAttachmentNo, contractAttachmentDTO.getData());
+        ContractAttachmentData contractAttachmentData = new ContractAttachmentData(contractAttachmentNo, contractAttachmentDTO.getData(), Instant.now(clock));
         ContractAttachmentData savedContractAttachmentData = contractAttachmentDataRepository.save(contractAttachmentData);
 
         return new ContractAttachmentDTO(contractAttachmentDecision, savedContractAttachmentData);

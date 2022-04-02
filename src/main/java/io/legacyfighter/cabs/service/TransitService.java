@@ -376,7 +376,7 @@ public class TransitService {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
 
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         transit.startAt(now);
 
         transitRepository.save(transit);

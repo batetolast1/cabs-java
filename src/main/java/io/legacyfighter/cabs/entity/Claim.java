@@ -135,18 +135,18 @@ public class Claim extends BaseEntity {
         this.reason = reason;
     }
 
-    public void escalate() {
+    public void escalate(Instant completionDate) {
         this.setStatus(ESCALATED);
         this.setCompletionMode(MANUAL);
-        this.setCompletionDate(Instant.now());
-        this.setChangeDate(Instant.now());
+        this.setCompletionDate(completionDate);
+        this.setChangeDate(completionDate);
     }
 
-    public void refund() {
+    public void refund(Instant completionDate) {
         this.setStatus(REFUNDED);
         this.setCompletionMode(AUTOMATIC);
-        this.setCompletionDate(Instant.now());
-        this.setChangeDate(Instant.now());
+        this.setCompletionDate(completionDate);
+        this.setChangeDate(completionDate);
     }
 
     @Override

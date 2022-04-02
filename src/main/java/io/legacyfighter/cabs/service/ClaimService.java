@@ -115,11 +115,11 @@ public class ClaimService {
         // process.execute(result);
 
         if (result.getDecision() == Claim.Status.REFUNDED) {
-            claim.refund();
+            claim.refund(Instant.now(clock));
             clientNotificationService.notifyClientAboutRefund(claim.getClaimNo(), claim.getOwner().getId());
         }
         if (result.getDecision() == ESCALATED) {
-            claim.escalate();
+            claim.escalate(Instant.now(clock));
         }
 
         if (result.getAwardedMiles() == ClaimsResolver.AwardedMiles.EXTRA_MILES) {

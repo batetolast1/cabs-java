@@ -39,7 +39,7 @@ public class DriverTrackingService {
         }
         DriverPosition position = new DriverPosition();
         position.setDriver(driver);
-        position.setSeenAt(Instant.now());
+        position.setSeenAt(Instant.now(clock));
         position.setLatitude(latitude);
         position.setLongitude(longitude);
         return positionRepository.save(position);

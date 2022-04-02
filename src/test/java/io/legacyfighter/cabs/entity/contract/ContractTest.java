@@ -3,6 +3,7 @@ package io.legacyfighter.cabs.entity.contract;
 import org.junit.jupiter.api.Test;
 
 import javax.persistence.EntityNotFoundException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,15 +20,16 @@ class ContractTest {
         String partnerName = "partner name";
         String subject = "subject";
         String contractNo = "contract no";
+        Instant creationDate = Instant.now();
 
         // when
-        Contract contract = new Contract(partnerName, subject, contractNo);
+        Contract contract = new Contract(partnerName, subject, contractNo, creationDate);
 
         // then
         assertThat(contract.getPartnerName()).isEqualTo(partnerName);
         assertThat(contract.getSubject()).isEqualTo(subject);
         assertThat(contract.getContractNo()).isEqualTo(contractNo);
-        assertThat(contract.getCreationDate()).isNotNull();
+        assertThat(contract.getCreationDate()).isEqualTo(creationDate);
         assertThat(contract.getStatus()).isEqualTo(Contract.Status.NEGOTIATIONS_IN_PROGRESS);
         assertThat(contract.getContractAttachmentDecisions()).isEmpty();
         assertThat(contract.getChangeDate()).isNull();
@@ -333,7 +335,8 @@ class ContractTest {
         String partnerName = "partner name";
         String subject = "subject";
         String contractNo = "contract no";
-        return new Contract(partnerName, subject, contractNo);
+        Instant creationDate = Instant.now();
+        return new Contract(partnerName, subject, contractNo, creationDate);
     }
 
     private Contract anAcceptedContract() {

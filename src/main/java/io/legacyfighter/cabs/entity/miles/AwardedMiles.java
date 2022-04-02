@@ -20,7 +20,7 @@ public class AwardedMiles extends BaseEntity {
     private Transit transit;
 
     @Column(nullable = false)
-    private Instant date = Instant.now();
+    private Instant date;
 
     private String milesJson;
 

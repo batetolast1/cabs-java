@@ -20,7 +20,7 @@ public class AwardsAccount extends BaseEntity {
     private Client client;
 
     @Column(nullable = false)
-    private Instant date = Instant.now();
+    private Instant date;
 
     @Column(nullable = false)
     private Boolean isActive = false;

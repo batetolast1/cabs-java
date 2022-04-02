@@ -135,7 +135,7 @@ public class AwardsService {
             throw new IllegalArgumentException("Account does not exists, id = " + clientId);
         }
 
-        Instant at = Instant.now();
+        Instant at = Instant.now(clock);
         AwardedMilesRemoveStrategy strategy = milesRemovingStrategyFactory.chooseFor(client);
 
         awardsAccount.remove(milesAmountToRemove, at, strategy);

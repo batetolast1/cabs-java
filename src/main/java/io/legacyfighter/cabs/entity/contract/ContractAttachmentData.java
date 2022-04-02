@@ -25,10 +25,12 @@ public class ContractAttachmentData extends BaseEntity {
     public ContractAttachmentData() {
     }
 
-    public ContractAttachmentData(UUID contractAttachmentNo, byte[] data) {
+    public ContractAttachmentData(UUID contractAttachmentNo,
+                                  byte[] data,
+                                  Instant creationDate) {
         this.contractAttachmentNo = contractAttachmentNo;
         this.data = data;
-        this.creationDate = Instant.now();
+        this.creationDate = creationDate;
     }
 
     public UUID getContractAttachmentNo() {
