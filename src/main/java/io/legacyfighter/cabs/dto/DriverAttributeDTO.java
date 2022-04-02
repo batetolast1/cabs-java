@@ -10,6 +10,9 @@ public class DriverAttributeDTO {
 
     private String value;
 
+    DriverAttributeDTO() {
+    }
+
     public DriverAttributeDTO(DriverAttribute driverAttribute) {
         this.name = driverAttribute.getName();
         this.value = driverAttribute.getValue();
@@ -18,10 +21,6 @@ public class DriverAttributeDTO {
     public DriverAttributeDTO(DriverAttribute.DriverAttributeName name, String value) {
         this.name = name;
         this.value = value;
-    }
-
-    DriverAttributeDTO() {
-
     }
 
     public DriverAttribute.DriverAttributeName getName() {
@@ -44,7 +43,7 @@ public class DriverAttributeDTO {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final DriverAttributeDTO that = (DriverAttributeDTO) o;
+        DriverAttributeDTO that = (DriverAttributeDTO) o;
         return name == that.name && Objects.equals(value, that.value);
     }
 

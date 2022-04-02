@@ -7,7 +7,10 @@ import org.togglz.core.context.FeatureContext;
 public enum FeatureFlags implements Feature {
 
     @Label("Driver report created using SQL queries")
-    DRIVER_REPORT_SQL;
+    DRIVER_REPORT_SQL,
+
+    @Label("Should compare reports")
+    DRIVER_REPORT_CREATION_RECONCILIATION;
 
     public boolean isActive() {
         return FeatureContext.getFeatureManager().isActive(this);

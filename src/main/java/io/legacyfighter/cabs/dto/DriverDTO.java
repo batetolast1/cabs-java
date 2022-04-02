@@ -2,6 +2,8 @@ package io.legacyfighter.cabs.dto;
 
 import io.legacyfighter.cabs.entity.Driver;
 
+import java.util.Objects;
+
 public class DriverDTO {
 
     private Long id;
@@ -98,5 +100,18 @@ public class DriverDTO {
 
     public void setType(Driver.Type type) {
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DriverDTO driverDTO = (DriverDTO) o;
+        return Objects.equals(id, driverDTO.id) && Objects.equals(firstName, driverDTO.firstName) && Objects.equals(lastName, driverDTO.lastName) && Objects.equals(driverLicense, driverDTO.driverLicense) && Objects.equals(photo, driverDTO.photo) && status == driverDTO.status && type == driverDTO.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, firstName, lastName, driverLicense, photo, status, type);
     }
 }

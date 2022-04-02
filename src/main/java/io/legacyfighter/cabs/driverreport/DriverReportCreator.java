@@ -1,9 +1,8 @@
 package io.legacyfighter.cabs.driverreport;
 
+import io.legacyfighter.cabs.config.FeatureFlags;
 import io.legacyfighter.cabs.dto.DriverReport;
 import org.springframework.stereotype.Service;
-
-import static io.legacyfighter.cabs.config.FeatureFlags.DRIVER_REPORT_SQL;
 
 @Service
 class DriverReportCreator {
@@ -12,20 +11,45 @@ class DriverReportCreator {
 
     private final OldDriverReportCreator oldDriverReportCreator;
 
+    private final DriverReportReconciliation driverReportReconciliation;
+
     DriverReportCreator(SqlBasedDriverReportCreator sqlBasedDriverReportCreator,
-                        OldDriverReportCreator oldDriverReportCreator) {
+                        OldDriverReportCreator oldDriverReportCreator,
+                        DriverReportReconciliation driverReportReconciliation) {
         this.sqlBasedDriverReportCreator = sqlBasedDriverReportCreator;
         this.oldDriverReportCreator = oldDriverReportCreator;
+        this.driverReportReconciliation = driverReportReconciliation;
     }
 
     DriverReport create(Long driverId, int lastDays) {
-        if (shouldUseNewReport()) {
-            return sqlBasedDriverReportCreator.createReport(driverId, lastDays);
+        DriverReport oldDriverReport = null;
+        DriverReport sqlBasedDriverReport = null;
+
+        if (shouldCompare()) {
+            oldDriverReport = oldDriverReportCreator.createReport(driverId, lastDays);
+            sqlBasedDriverReport = sqlBasedDriverReportCreator.createReport(driverId, lastDays);
+
+            driverReportReconciliation.compare(oldDriverReport, sqlBasedDriverReport);
         }
-        return oldDriverReportCreator.createReport(driverId, lastDays);
+
+        if (shouldUseNewReport()) {
+            if (sqlBasedDriverReport == null) {
+                sqlBasedDriverReport = sqlBasedDriverReportCreator.createReport(driverId, lastDays);
+            }
+            return sqlBasedDriverReport;
+        }
+
+        if (oldDriverReport == null) {
+            oldDriverReport = oldDriverReportCreator.createReport(driverId, lastDays);
+        }
+        return oldDriverReport;
     }
 
     private boolean shouldUseNewReport() {
-        return DRIVER_REPORT_SQL.isActive();
+        return FeatureFlags.DRIVER_REPORT_SQL.isActive();
+    }
+
+    private boolean shouldCompare() {
+        return FeatureFlags.DRIVER_REPORT_CREATION_RECONCILIATION.isActive();
     }
 }

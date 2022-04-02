@@ -1,9 +1,6 @@
 package io.legacyfighter.cabs.dto;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DriverReport {
 
@@ -39,5 +36,31 @@ public class DriverReport {
 
     public void addAttribute(DriverAttributeDTO attribute) {
         attributes.add(attribute);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DriverReport that = (DriverReport) o;
+        return Objects.equals(driverDTO, that.driverDTO)
+                && areEqual(attributes, that.attributes)
+                && areEqual(sessions, that.sessions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(driverDTO, attributes, sessions);
+    }
+
+    private boolean areEqual(List<DriverAttributeDTO> first, List<DriverAttributeDTO> second) {
+        return first.containsAll(second) && second.containsAll(first);
+    }
+
+    private boolean areEqual(Map<DriverSessionDTO, List<TransitDTO>> first, Map<DriverSessionDTO, List<TransitDTO>> second) {
+        return first.entrySet().stream()
+                .allMatch(e -> Objects.equals(e.getValue(), second.get(e.getKey())))
+                && second.entrySet().stream()
+                .allMatch(e -> Objects.equals(e.getValue(), first.get(e.getKey())));
     }
 }

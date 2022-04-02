@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class TransitDTO {
 
@@ -171,7 +172,6 @@ public class TransitDTO {
         this.claimDTO = claimDTO;
     }
 
-
     public AddressDTO getTo() {
         return to;
     }
@@ -274,5 +274,30 @@ public class TransitDTO {
 
     public void setEstimatedPrice(BigDecimal estimatedPrice) {
         this.estimatedPrice = estimatedPrice;
+    }
+
+    public DriverDTO getDriver() {
+        return driver;
+    }
+
+    public void setDriver(DriverDTO driver) {
+        this.driver = driver;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TransitDTO that = (TransitDTO) o;
+        return Objects.equals(id, that.id) && Objects.equals(tariff, that.tariff) && status == that.status && Objects.equals(driver, that.driver) && Objects.equals(factor, that.factor) && Objects.equals(distance, that.distance) && Objects.equals(distanceUnit, that.distanceUnit) && Objects.equals(kmRate, that.kmRate) && Objects.equals(price, that.price) && Objects.equals(driverFee, that.driverFee) && Objects.equals(estimatedPrice, that.estimatedPrice) && Objects.equals(baseFee, that.baseFee) && Objects.equals(date, that.date) && Objects.equals(dateTime, that.dateTime) && Objects.equals(published, that.published) && Objects.equals(acceptedAt, that.acceptedAt) && Objects.equals(started, that.started) && Objects.equals(completeAt, that.completeAt) && Objects.equals(claimDTO, that.claimDTO) && areEqual(proposedDrivers, that.proposedDrivers) && Objects.equals(to, that.to) && Objects.equals(from, that.from) && carClass == that.carClass && Objects.equals(clientDTO, that.clientDTO);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, tariff, status, driver, factor, distance, distanceUnit, kmRate, price, driverFee, estimatedPrice, baseFee, date, dateTime, published, acceptedAt, started, completeAt, claimDTO, proposedDrivers, to, from, carClass, clientDTO);
+    }
+
+    private boolean areEqual(List<DriverDTO> first, List<DriverDTO> second) {
+        return first.containsAll(second) && second.containsAll(first);
     }
 }

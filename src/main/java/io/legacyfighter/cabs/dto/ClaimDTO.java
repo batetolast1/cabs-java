@@ -130,7 +130,6 @@ public class ClaimDTO {
         this.claimID = claimID;
     }
 
-
     public Long getClientId() {
         return clientId;
     }
@@ -169,5 +168,18 @@ public class ClaimDTO {
 
     public void setDraft(boolean draft) {
         isDraft = draft;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClaimDTO claimDTO = (ClaimDTO) o;
+        return isDraft == claimDTO.isDraft && Objects.equals(claimID, claimDTO.claimID) && Objects.equals(clientId, claimDTO.clientId) && Objects.equals(transitId, claimDTO.transitId) && Objects.equals(reason, claimDTO.reason) && Objects.equals(incidentDescription, claimDTO.incidentDescription) && Objects.equals(creationDate, claimDTO.creationDate) && Objects.equals(completionDate, claimDTO.completionDate) && Objects.equals(changeDate, claimDTO.changeDate) && completionMode == claimDTO.completionMode && status == claimDTO.status && Objects.equals(claimNo, claimDTO.claimNo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(claimID, clientId, transitId, reason, incidentDescription, isDraft, creationDate, completionDate, changeDate, completionMode, status, claimNo);
     }
 }

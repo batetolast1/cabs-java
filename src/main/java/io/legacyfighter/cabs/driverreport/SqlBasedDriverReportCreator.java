@@ -155,15 +155,16 @@ class SqlBasedDriverReportCreator {
 
         List<Tuple> driverWithAttributes = getDriverWithAttributes(driverId);
 
-        driverWithAttributes.forEach(tuple -> addAttributeToReport(driverReport, tuple));
+        driverWithAttributes.forEach(tuple -> addDriverAttributeToReport(tuple, driverReport));
 
-        driverWithAttributes.stream()
+        DriverDTO driverDTO = retrieveDriver(driverWithAttributes.stream()
                 .findFirst()
-                .ifPresent(tuple -> addDriverToReport(driverReport, tuple));
+                .get());
+        addDriverToReport(driverDTO, driverReport);
 
         Stream<Tuple> driverSessionsWithTransits = getDriverSessionsWithTransits(driverId, lastDays);
 
-        driverReport.setSessions(mapToDriverSessions(driverSessionsWithTransits));
+        driverReport.setSessions(mapToDriverSessions(driverSessionsWithTransits, driverDTO));
 
         return driverReport;
     }
@@ -195,21 +196,21 @@ class SqlBasedDriverReportCreator {
         return beggingOfToday.minus(lastDays, ChronoUnit.DAYS);
     }
 
-    private void addAttributeToReport(DriverReport driverReport, Tuple tuple) {
-        driverReport.addAttribute(retrieveDriverAttribute(tuple));
+    private void addDriverAttributeToReport(Tuple driverAttribute, DriverReport driverReport) {
+        driverReport.addAttribute(retrieveDriverAttribute(driverAttribute));
     }
 
-    private void addDriverToReport(DriverReport driverReport, Tuple tuple) {
-        driverReport.setDriverDTO(retrieveDriver(tuple));
+    private void addDriverToReport(DriverDTO driverDTO, DriverReport driverReport) {
+        driverReport.setDriverDTO(driverDTO);
     }
 
-    private Map<DriverSessionDTO, List<TransitDTO>> mapToDriverSessions(Stream<Tuple> driverSessionsWithTransits) {
+    private Map<DriverSessionDTO, List<TransitDTO>> mapToDriverSessions(Stream<Tuple> driverSessionsWithTransits, DriverDTO driverDTO) {
         return driverSessionsWithTransits.collect(
                 Collectors.toMap(
                         this::retrieveDrivingSession,
                         tuple -> {
                             List<TransitDTO> transitDTOS = new ArrayList<>();
-                            transitDTOS.add(retrieveTransit(tuple));
+                            transitDTOS.add(retrieveTransit(tuple, driverDTO));
                             return transitDTOS;
                         },
                         (existingTransitDTOList, newTransitDTOList) -> {
@@ -233,68 +234,68 @@ class SqlBasedDriverReportCreator {
         );
     }
 
-    private List<DriverDTO> retrieveProposedDrivers(Tuple tuple) {
+    private List<DriverDTO> retrieveDriverAsList(Tuple driver) {
         List<DriverDTO> driverDTOS = new ArrayList<>();
-        driverDTOS.add(retrieveDriver(tuple));
+        driverDTOS.add(retrieveDriver(driver));
         return driverDTOS;
     }
 
-    private DriverDTO retrieveDriver(Tuple tuple) {
+    private DriverDTO retrieveDriver(Tuple driver) {
         return new DriverDTO(
-                tuple.get("DRIVER_ID") == null ? null : ((Number) tuple.get("DRIVER_ID")).longValue(),
-                (String) tuple.get("DRIVER_FIRST_NAME"),
-                (String) tuple.get("DRIVER_LAST_NAME"),
-                (String) tuple.get("DRIVER_LICENSE"),
-                (String) tuple.get("DRIVER_PHOTO"),
-                tuple.get("DRIVER_STATUS") == null ? null : Driver.Status.values()[(Integer) tuple.get("DRIVER_STATUS")],
-                tuple.get("DRIVER_TYPE") == null ? null : Driver.Type.values()[(Integer) tuple.get("DRIVER_TYPE")]
+                driver.get("DRIVER_ID") == null ? null : ((Number) driver.get("DRIVER_ID")).longValue(),
+                (String) driver.get("DRIVER_FIRST_NAME"),
+                (String) driver.get("DRIVER_LAST_NAME"),
+                (String) driver.get("DRIVER_LICENSE"),
+                (String) driver.get("DRIVER_PHOTO"),
+                driver.get("DRIVER_STATUS") == null ? null : Driver.Status.values()[(Integer) driver.get("DRIVER_STATUS")],
+                driver.get("DRIVER_TYPE") == null ? null : Driver.Type.values()[(Integer) driver.get("DRIVER_TYPE")]
         );
     }
 
-    private DriverAttributeDTO retrieveDriverAttribute(Tuple tuple) {
+    private DriverAttributeDTO retrieveDriverAttribute(Tuple driverAttribute) {
         return new DriverAttributeDTO(
-                tuple.get("NAME") == null ? null : (DriverAttribute.DriverAttributeName.valueOf((String) tuple.get("NAME"))),
-                (String) tuple.get("VALUE")
+                driverAttribute.get("NAME") == null ? null : (DriverAttribute.DriverAttributeName.valueOf((String) driverAttribute.get("NAME"))),
+                (String) driverAttribute.get("VALUE")
         );
     }
 
-    private DriverSessionDTO retrieveDrivingSession(Tuple tuple) {
+    private DriverSessionDTO retrieveDrivingSession(Tuple drivingSession) {
         return new DriverSessionDTO(
-                tuple.get("LOGGED_AT") == null ? null : ((Timestamp) tuple.get("LOGGED_AT")).toInstant(),
-                tuple.get("LOGGED_OUT_AT") == null ? null : ((Timestamp) tuple.get("LOGGED_OUT_AT")).toInstant(),
-                (String) tuple.get("PLATES_NUMBER"),
-                tuple.get("CAR_CLASS") == null ? null : CarType.CarClass.valueOf((String) tuple.get("CAR_CLASS")),
-                (String) tuple.get("CAR_BRAND")
+                drivingSession.get("LOGGED_AT") == null ? null : ((Timestamp) drivingSession.get("LOGGED_AT")).toInstant(),
+                drivingSession.get("LOGGED_OUT_AT") == null ? null : ((Timestamp) drivingSession.get("LOGGED_OUT_AT")).toInstant(),
+                (String) drivingSession.get("PLATES_NUMBER"),
+                drivingSession.get("CAR_CLASS") == null ? null : CarType.CarClass.valueOf((String) drivingSession.get("CAR_CLASS")),
+                (String) drivingSession.get("CAR_BRAND")
         );
     }
 
-    private TransitDTO retrieveTransit(Tuple tuple) {
+    private TransitDTO retrieveTransit(Tuple transit, DriverDTO driverDTO) {
         return new TransitDTO(
-                tuple.get("TRANSIT_ID") == null ? null : ((Number) tuple.get("TRANSIT_ID")).longValue(),
-                (String) tuple.get("TARIFF_NAME"),
-                tuple.get("TRANSIT_STATUS") == null ? null : Transit.Status.values()[((Integer) tuple.get("TRANSIT_STATUS"))],
-                null,
-                tuple.get("KM") == null ? null : Distance.ofKm(((Number) tuple.get("KM")).floatValue()),
-                tuple.get("KM_RATE") == null ? null : ((Number) tuple.get("KM_RATE")).floatValue(),
-                tuple.get("PRICE") == null ? null : new BigDecimal(((Number) tuple.get("PRICE")).intValue()),
-                tuple.get("DRIVERS_FEE") == null ? null : new BigDecimal(((Number) tuple.get("DRIVERS_FEE")).intValue()),
-                tuple.get("ESTIMATED_PRICE") == null ? null : new BigDecimal(((Number) tuple.get("ESTIMATED_PRICE")).intValue()),
-                tuple.get("BASE_FEE") == null ? null : new BigDecimal(((Number) tuple.get("BASE_FEE")).intValue()),
-                tuple.get("DATE_TIME") == null ? null : ((Timestamp) tuple.get("DATE_TIME")).toInstant(),
-                tuple.get("PUBLISHED") == null ? null : ((Timestamp) tuple.get("PUBLISHED")).toInstant(),
-                tuple.get("ACCEPTED_AT") == null ? null : ((Timestamp) tuple.get("ACCEPTED_AT")).toInstant(),
-                tuple.get("STARTED") == null ? null : ((Timestamp) tuple.get("STARTED")).toInstant(),
-                tuple.get("COMPLETE_AT") == null ? null : ((Timestamp) tuple.get("COMPLETE_AT")).toInstant(),
-                retrieveClaim(tuple),
-                retrieveProposedDrivers(tuple),
-                retrieveFromAddress(tuple),
-                retrieveToAddress(tuple),
-                tuple.get("CAR_TYPE") == null ? null : CarType.CarClass.valueOf((String) tuple.get("CAR_TYPE")),
-                retrieveClient(tuple));
+                transit.get("TRANSIT_ID") == null ? null : ((Number) transit.get("TRANSIT_ID")).longValue(),
+                (String) transit.get("TARIFF_NAME"),
+                transit.get("TRANSIT_STATUS") == null ? null : Transit.Status.values()[((Integer) transit.get("TRANSIT_STATUS"))],
+                driverDTO,
+                transit.get("KM") == null ? null : Distance.ofKm(((Number) transit.get("KM")).floatValue()),
+                transit.get("KM_RATE") == null ? null : ((Number) transit.get("KM_RATE")).floatValue(),
+                transit.get("PRICE") == null ? null : new BigDecimal(((Number) transit.get("PRICE")).intValue()),
+                transit.get("DRIVERS_FEE") == null ? null : new BigDecimal(((Number) transit.get("DRIVERS_FEE")).intValue()),
+                transit.get("ESTIMATED_PRICE") == null ? null : new BigDecimal(((Number) transit.get("ESTIMATED_PRICE")).intValue()),
+                transit.get("BASE_FEE") == null ? null : new BigDecimal(((Number) transit.get("BASE_FEE")).intValue()),
+                transit.get("DATE_TIME") == null ? null : ((Timestamp) transit.get("DATE_TIME")).toInstant(),
+                transit.get("PUBLISHED") == null ? null : ((Timestamp) transit.get("PUBLISHED")).toInstant(),
+                transit.get("ACCEPTED_AT") == null ? null : ((Timestamp) transit.get("ACCEPTED_AT")).toInstant(),
+                transit.get("STARTED") == null ? null : ((Timestamp) transit.get("STARTED")).toInstant(),
+                transit.get("COMPLETE_AT") == null ? null : ((Timestamp) transit.get("COMPLETE_AT")).toInstant(),
+                retrieveClaim(transit),
+                retrieveDriverAsList(transit),
+                retrieveFromAddress(transit),
+                retrieveToAddress(transit),
+                transit.get("CAR_TYPE") == null ? null : CarType.CarClass.valueOf((String) transit.get("CAR_TYPE")),
+                retrieveClient(transit));
     }
 
-    private ClaimDTO retrieveClaim(Tuple tuple) {
-        Number claimId = (Number) tuple.get("CLAIM_ID");
+    private ClaimDTO retrieveClaim(Tuple claim) {
+        Number claimId = (Number) claim.get("CLAIM_ID");
 
         if (claimId == null) {
             return null;
@@ -302,53 +303,53 @@ class SqlBasedDriverReportCreator {
 
         return new ClaimDTO(
                 claimId.longValue(),
-                tuple.get("OWNER_ID") == null ? null : ((Number) tuple.get("OWNER_ID")).longValue(),
-                tuple.get("TRANSIT_ID") == null ? null : ((Number) tuple.get("TRANSIT_ID")).longValue(),
-                (String) tuple.get("REASON"),
-                (String) tuple.get("INCIDENT_DESCRIPTION"),
-                tuple.get("CREATION_DATE") == null ? null : ((Timestamp) tuple.get("CREATION_DATE")).toInstant(),
-                tuple.get("COMPLETION_DATE") == null ? null : ((Timestamp) tuple.get("COMPLETION_DATE")).toInstant(),
-                tuple.get("CHANGE_DATE") == null ? null : ((Timestamp) tuple.get("CHANGE_DATE")).toInstant(),
-                tuple.get("COMPLETION_MODE") == null ? null : Claim.CompletionMode.valueOf((String) tuple.get("COMPLETION_MODE")),
-                tuple.get("CLAIM_STATUS") == null ? null : Claim.Status.valueOf((String) tuple.get("CLAIM_STATUS")),
-                (String) tuple.get("CLAIM_NO")
+                claim.get("OWNER_ID") == null ? null : ((Number) claim.get("OWNER_ID")).longValue(),
+                claim.get("TRANSIT_ID") == null ? null : ((Number) claim.get("TRANSIT_ID")).longValue(),
+                (String) claim.get("REASON"),
+                (String) claim.get("INCIDENT_DESCRIPTION"),
+                claim.get("CREATION_DATE") == null ? null : ((Timestamp) claim.get("CREATION_DATE")).toInstant(),
+                claim.get("COMPLETION_DATE") == null ? null : ((Timestamp) claim.get("COMPLETION_DATE")).toInstant(),
+                claim.get("CHANGE_DATE") == null ? null : ((Timestamp) claim.get("CHANGE_DATE")).toInstant(),
+                claim.get("COMPLETION_MODE") == null ? null : Claim.CompletionMode.valueOf((String) claim.get("COMPLETION_MODE")),
+                claim.get("CLAIM_STATUS") == null ? null : Claim.Status.valueOf((String) claim.get("CLAIM_STATUS")),
+                (String) claim.get("CLAIM_NO")
         );
     }
 
-    private AddressDTO retrieveFromAddress(Tuple tuple) {
+    private AddressDTO retrieveFromAddress(Tuple addressFrom) {
         return new AddressDTO(
-                (String) tuple.get("AF_COUNTRY"),
-                (String) tuple.get("AF_DISTRICT"),
-                (String) tuple.get("AF_CITY"),
-                (String) tuple.get("AF_STREET"),
-                tuple.get("AF_NUMBER") == null ? null : ((Integer) tuple.get("AF_NUMBER")),
-                tuple.get("AF_ADDITIONAL_NUMBER") == null ? null : ((Integer) tuple.get("AF_ADDITIONAL_NUMBER")),
-                (String) tuple.get("AF_POSTAL_CODE"),
-                (String) tuple.get("AF_NAME")
+                (String) addressFrom.get("AF_COUNTRY"),
+                (String) addressFrom.get("AF_DISTRICT"),
+                (String) addressFrom.get("AF_CITY"),
+                (String) addressFrom.get("AF_STREET"),
+                addressFrom.get("AF_NUMBER") == null ? null : ((Integer) addressFrom.get("AF_NUMBER")),
+                addressFrom.get("AF_ADDITIONAL_NUMBER") == null ? null : ((Integer) addressFrom.get("AF_ADDITIONAL_NUMBER")),
+                (String) addressFrom.get("AF_POSTAL_CODE"),
+                (String) addressFrom.get("AF_NAME")
         );
     }
 
-    private AddressDTO retrieveToAddress(Tuple tuple) {
+    private AddressDTO retrieveToAddress(Tuple addressTo) {
         return new AddressDTO(
-                (String) tuple.get("ATO_COUNTRY"),
-                (String) tuple.get("ATO_DISTRICT"),
-                (String) tuple.get("ATO_CITY"),
-                (String) tuple.get("ATO_STREET"),
-                tuple.get("ATO_NUMBER") == null ? null : ((Integer) tuple.get("ATO_NUMBER")),
-                tuple.get("ATO_ADDITIONAL_NUMBER") == null ? null : ((Integer) tuple.get("ATO_ADDITIONAL_NUMBER")),
-                (String) tuple.get("ATO_POSTAL_CODE"),
-                (String) tuple.get("ATO_NAME")
+                (String) addressTo.get("ATO_COUNTRY"),
+                (String) addressTo.get("ATO_DISTRICT"),
+                (String) addressTo.get("ATO_CITY"),
+                (String) addressTo.get("ATO_STREET"),
+                addressTo.get("ATO_NUMBER") == null ? null : ((Integer) addressTo.get("ATO_NUMBER")),
+                addressTo.get("ATO_ADDITIONAL_NUMBER") == null ? null : ((Integer) addressTo.get("ATO_ADDITIONAL_NUMBER")),
+                (String) addressTo.get("ATO_POSTAL_CODE"),
+                (String) addressTo.get("ATO_NAME")
         );
     }
 
-    private ClientDTO retrieveClient(Tuple tuple) {
+    private ClientDTO retrieveClient(Tuple client) {
         return new ClientDTO(
-                tuple.get("CLIENT_ID") == null ? null : ((Number) tuple.get("CLIENT_ID")).longValue(),
-                tuple.get("CLIENT_TYPE") == null ? null : Client.Type.values()[((Integer) tuple.get("CLIENT_TYPE"))],
-                (String) tuple.get("CLIENT_NAME"),
-                (String) tuple.get("CLIENT_LAST_NAME"),
-                tuple.get("CLIENT_DEFAULT_PAYMENT_TYPE") == null ? null : Client.PaymentType.valueOf((String) tuple.get("CLIENT_DEFAULT_PAYMENT_TYPE")),
-                tuple.get("CLIENT_CLIENT_TYPE") == null ? null : Client.ClientType.valueOf((String) tuple.get("CLIENT_CLIENT_TYPE"))
+                client.get("CLIENT_ID") == null ? null : ((Number) client.get("CLIENT_ID")).longValue(),
+                client.get("CLIENT_TYPE") == null ? null : Client.Type.values()[((Integer) client.get("CLIENT_TYPE"))],
+                (String) client.get("CLIENT_NAME"),
+                (String) client.get("CLIENT_LAST_NAME"),
+                client.get("CLIENT_DEFAULT_PAYMENT_TYPE") == null ? null : Client.PaymentType.valueOf((String) client.get("CLIENT_DEFAULT_PAYMENT_TYPE")),
+                client.get("CLIENT_CLIENT_TYPE") == null ? null : Client.ClientType.valueOf((String) client.get("CLIENT_CLIENT_TYPE"))
         );
     }
 }

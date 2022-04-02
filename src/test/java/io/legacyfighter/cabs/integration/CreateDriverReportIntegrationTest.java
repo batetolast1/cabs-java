@@ -2,6 +2,8 @@ package io.legacyfighter.cabs.integration;
 
 import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.config.AppProperties;
+import io.legacyfighter.cabs.config.FeatureFlags;
+import io.legacyfighter.cabs.driverreport.DriverReportController;
 import io.legacyfighter.cabs.dto.*;
 import io.legacyfighter.cabs.entity.*;
 import io.legacyfighter.cabs.money.Money;
@@ -10,22 +12,25 @@ import io.legacyfighter.cabs.service.DriverSessionService;
 import io.legacyfighter.cabs.service.DriverTrackingService;
 import io.legacyfighter.cabs.service.GeocodingService;
 import io.legacyfighter.cabs.service.TransitService;
-import io.legacyfighter.cabs.driverreport.DriverReportController;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.togglz.junit5.AllDisabled;
+import org.togglz.testing.TestFeatureManager;
 
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.legacyfighter.cabs.config.FeatureFlags.DRIVER_REPORT_SQL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@AllDisabled(FeatureFlags.class)
 class CreateDriverReportIntegrationTest {
 
     private final static Instant TODAY = LocalDateTime.of(2022, Month.MARCH, 29, 19, 29).toInstant(OffsetDateTime.now().getOffset());
@@ -69,7 +74,8 @@ class CreateDriverReportIntegrationTest {
     }
 
     @Test
-    void canCreateDriverReport() {
+    @Order(1)
+    void canCreateDriverReport(TestFeatureManager testFeatureManager) {
         // given
         Client client = fixtures.aClient(Client.Type.NORMAL, "Alex", "Vega", Client.PaymentType.MONTHLY_INVOICE, Client.ClientType.INDIVIDUAL);
         // and
@@ -93,6 +99,8 @@ class CreateDriverReportIntegrationTest {
         List<Transit> transits = driverHasCompletedTransitsInSession(driver, client, "ABC123", CarType.CarClass.VAN, "Volkswagen Golf", from, to, 2, additionalDriver);
         // and
         Claim claim = fixtures.createResolvedClaim(client, transits.get(0), "too fast");
+        // and
+        testFeatureManager.enable(DRIVER_REPORT_SQL);
 
         // when
         DriverReport driverReport = driverReportController.loadReportForDriver(driver.getId(), 0);
@@ -148,6 +156,15 @@ class CreateDriverReportIntegrationTest {
         assertThat(transitDTO1.getFrom()).isNotNull();
         assertThat(transitDTO1.getCarClass()).isEqualTo(CarType.CarClass.VAN);
         assertThat(transitDTO1.getClientDTO()).isNotNull();
+
+        DriverDTO transitDTO1driver = transitDTO1.getDriver();
+        assertThat(transitDTO1driver.getId()).isEqualTo(driver.getId());
+        assertThat(transitDTO1driver.getFirstName()).isEqualTo("John");
+        assertThat(transitDTO1driver.getLastName()).isEqualTo("Doe");
+        assertThat(transitDTO1driver.getDriverLicense()).isEqualTo("9AAAA123456AA1AA");
+        assertThat(transitDTO1driver.getPhoto()).isEqualTo("photo");
+        assertThat(transitDTO1driver.getStatus()).isEqualTo(Driver.Status.ACTIVE);
+        assertThat(transitDTO1driver.getType()).isEqualTo(Driver.Type.REGULAR);
 
         // and
         ClaimDTO claimDTO1 = transitDTO1.getClaimDTO();
@@ -213,6 +230,43 @@ class CreateDriverReportIntegrationTest {
         assertThat(clientDTO1.getClientType()).isEqualTo(Client.ClientType.INDIVIDUAL);
     }
 
+    @Test
+    @Order(2)
+    void sqlBasedDriverReportIsTheSameAsOldDriverReport(TestFeatureManager testFeatureManager) {
+        // given
+        Client client = fixtures.aClient(Client.Type.NORMAL, "Alex", "Vega", Client.PaymentType.MONTHLY_INVOICE, Client.ClientType.INDIVIDUAL);
+        // and
+        Driver driver = fixtures.aDriver(Driver.Status.ACTIVE, "John", "Doe", "9AAAA123456AA1AA", "photo", Driver.Type.REGULAR);
+        Driver additionalDriver = fixtures.aDriver(Driver.Status.ACTIVE, "Patrick", "Boyle", "AAAAA123456AA1AA", "photo", Driver.Type.REGULAR);
+        // and
+        fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 50, new Money(10));
+        // and
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.PENALTY_POINTS, "10");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.NATIONALITY, "Polish");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.YEARS_OF_EXPERIENCE, "15");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.MEDICAL_EXAMINATION_EXPIRATION_DATE, "31.12.2022");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.MEDICAL_EXAMINATION_REMARKS, "private medical data");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.EMAIL, "johndoe@gmail.com");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.BIRTHPLACE, "Warsaw");
+        fixtures.driverHasAttribute(driver, DriverAttribute.DriverAttributeName.COMPANY_NAME, "Uber");
+        // and
+        Address from = anAddress("Poland", "Poznań", "Antoninek", "Bożeny", 32, 1, "61-054", "home", 10, 20);
+        Address to = anAddress("Germany", "Berlin", "Downtown", "Strasse", 12, 2, "61-053", "work", 10.1, 20.1);
+        // and
+        List<Transit> transits = driverHasCompletedTransitsInSession(driver, client, "ABC123", CarType.CarClass.VAN, "Volkswagen Golf", from, to, 2, additionalDriver);
+        // and
+        fixtures.createResolvedClaim(client, transits.get(0), "too fast");
+
+        // when
+        DriverReport oldDriverReport = driverReportController.loadReportForDriver(driver.getId(), 0);
+
+        testFeatureManager.enable(DRIVER_REPORT_SQL);
+        DriverReport sqlBasedDriverReport = driverReportController.loadReportForDriver(driver.getId(), 0);
+
+        // then
+        assertThat(oldDriverReport).isEqualTo(sqlBasedDriverReport);
+    }
+
     private List<Transit> driverHasCompletedTransitsInSession(Driver driver,
                                                               Client client,
                                                               String plateNumber,
@@ -265,8 +319,10 @@ class CreateDriverReportIntegrationTest {
         address.setPostalCode(postalCode);
         address.setName(name);
 
-        when(geocodingService.geocodeAddress(address)).thenReturn(new double[]{latitude, longitude});
+        Address saved = addressRepository.save(address);
 
-        return addressRepository.save(address);
+        when(geocodingService.geocodeAddress(saved)).thenReturn(new double[]{latitude, longitude});
+
+        return saved;
     }
 }
