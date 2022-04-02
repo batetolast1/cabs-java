@@ -1,4 +1,4 @@
-package io.legacyfighter.cabs.ui;
+package io.legacyfighter.cabs.driverreport;
 
 import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.dto.*;
@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import static io.legacyfighter.cabs.entity.DriverAttribute.DriverAttributeName.MEDICAL_EXAMINATION_REMARKS;
 
 @Service
-public class SqlBasedDriverReportCreator {
+class SqlBasedDriverReportCreator {
 
     private static final String QUERY_FOR_DRIVER_WITH_ATTRIBUTES =
             "SELECT " +
@@ -144,13 +144,13 @@ public class SqlBasedDriverReportCreator {
 
     private final Clock clock;
 
-    public SqlBasedDriverReportCreator(EntityManager entityManager,
-                                       Clock clock) {
+    SqlBasedDriverReportCreator(EntityManager entityManager,
+                                Clock clock) {
         this.entityManager = entityManager;
         this.clock = clock;
     }
 
-    public DriverReport createReport(Long driverId, int lastDays) {
+    DriverReport createReport(Long driverId, int lastDays) {
         DriverReport driverReport = new DriverReport();
 
         List<Tuple> driverWithAttributes = getDriverWithAttributes(driverId);

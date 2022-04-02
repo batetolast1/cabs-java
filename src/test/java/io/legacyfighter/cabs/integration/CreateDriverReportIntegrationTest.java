@@ -10,7 +10,7 @@ import io.legacyfighter.cabs.service.DriverSessionService;
 import io.legacyfighter.cabs.service.DriverTrackingService;
 import io.legacyfighter.cabs.service.GeocodingService;
 import io.legacyfighter.cabs.service.TransitService;
-import io.legacyfighter.cabs.ui.DriverReportController;
+import io.legacyfighter.cabs.driverreport.DriverReportController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
