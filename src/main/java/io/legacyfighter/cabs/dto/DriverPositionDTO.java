@@ -4,10 +4,6 @@ import java.time.Instant;
 
 public class DriverPositionDTO {
 
-    public DriverPositionDTO() {
-
-    }
-
     private Long driverId;
 
     private double latitude;
@@ -16,7 +12,13 @@ public class DriverPositionDTO {
 
     private Instant seenAt;
 
-    public DriverPositionDTO(Long driverId, double latitude, double longitude, Instant seenAt) {
+    public DriverPositionDTO() {
+    }
+
+    public DriverPositionDTO(Long driverId,
+                             double latitude,
+                             double longitude,
+                             Instant seenAt) {
         this.driverId = driverId;
         this.latitude = latitude;
         this.longitude = longitude;

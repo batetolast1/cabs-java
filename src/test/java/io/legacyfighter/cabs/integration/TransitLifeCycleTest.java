@@ -21,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
+import java.time.Instant;
 import java.util.UUID;
 
 import static io.legacyfighter.cabs.entity.CarType.CarClass.VAN;
@@ -1270,7 +1271,7 @@ class TransitLifeCycleTest {
 
         fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 100, new Money(0));
         driverSessionService.logIn(driver.getId(), "plateNumber", VAN, null);
-        driverTrackingService.registerPosition(driver.getId(), 1, 1);
+        driverTrackingService.registerPosition(driver.getId(), 1, 1, Instant.now());
 
         return driver.getId();
     }
@@ -1280,7 +1281,7 @@ class TransitLifeCycleTest {
 
         fixtures.driverHasFee(driver, DriverFee.FeeType.FLAT, 100, new Money(0));
         driverSessionService.logIn(driver.getId(), "plateNumber", VAN, null);
-        driverTrackingService.registerPosition(driver.getId(), 1000, 1000);
+        driverTrackingService.registerPosition(driver.getId(), 1000, 1000, Instant.now());
 
         return driver.getId();
     }

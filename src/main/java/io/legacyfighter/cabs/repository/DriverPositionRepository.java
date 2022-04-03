@@ -11,8 +11,18 @@ import java.util.List;
 
 public interface DriverPositionRepository extends JpaRepository<DriverPosition, Long> {
 
-    @Query(value = "SELECT new io.legacyfighter.cabs.dto.DriverPositionDTOV2(p.driver, avg(p.latitude), avg(p.longitude), max(p.seenAt)) FROM DriverPosition p where p.latitude between ?1 and ?2 and p.longitude between ?3 and ?4 and p.seenAt >= ?5 group by p.driver.id")
-    List<DriverPositionDTOV2> findAverageDriverPositionSince(double latitudeMin, double latitudeMax, double longitudeMin, double longitudeMax, Instant date);
+    @Query(value = "" +
+            "SELECT new io.legacyfighter.cabs.dto.DriverPositionDTOV2(p.driver, avg(p.latitude), avg(p.longitude), max(p.seenAt)) " +
+            "FROM DriverPosition p " +
+            "WHERE p.latitude BETWEEN ?1 AND ?2 AND p.longitude BETWEEN ?3 AND ?4 AND p.seenAt >= ?5 " +
+            "GROUP BY p.driver.id")
+    List<DriverPositionDTOV2> findAverageDriverPositionSince(double latitudeMin,
+                                                             double latitudeMax,
+                                                             double longitudeMin,
+                                                             double longitudeMax,
+                                                             Instant date);
 
-    List<DriverPosition> findByDriverAndSeenAtBetweenOrderBySeenAtAsc(Driver driver, Instant from, Instant to);
+    List<DriverPosition> findByDriverAndSeenAtBetweenOrderBySeenAtAsc(Driver driver,
+                                                                      Instant from,
+                                                                      Instant to);
 }

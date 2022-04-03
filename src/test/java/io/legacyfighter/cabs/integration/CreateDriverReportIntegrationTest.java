@@ -277,10 +277,10 @@ class CreateDriverReportIntegrationTest {
                                                               int transitAmount,
                                                               Driver additionalLoggedInDriver) {
         driverSessionService.logIn(driver.getId(), plateNumber, carClass, carBrand);
-        driverTrackingService.registerPosition(driver.getId(), 10, 20);
+        driverTrackingService.registerPosition(driver.getId(), 10, 20, TODAY);
 
         driverSessionService.logIn(additionalLoggedInDriver.getId(), plateNumber, carClass, carBrand);
-        driverTrackingService.registerPosition(additionalLoggedInDriver.getId(), 10, 20);
+        driverTrackingService.registerPosition(additionalLoggedInDriver.getId(), 10, 20, TODAY);
 
         List<Transit> transits = new ArrayList<>();
         for (int i = 0; i < transitAmount; i++) {

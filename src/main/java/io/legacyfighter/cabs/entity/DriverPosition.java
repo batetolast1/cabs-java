@@ -2,7 +2,9 @@ package io.legacyfighter.cabs.entity;
 
 import io.legacyfighter.cabs.common.BaseEntity;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import java.time.Instant;
 
 @Entity
@@ -21,6 +23,7 @@ public class DriverPosition extends BaseEntity {
     private Instant seenAt;
 
     public DriverPosition() {
+        // for JPA
     }
 
     public Driver getDriver() {

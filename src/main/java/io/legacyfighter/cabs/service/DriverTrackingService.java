@@ -1,46 +1,52 @@
 package io.legacyfighter.cabs.service;
 
 import io.legacyfighter.cabs.distance.Distance;
-import io.legacyfighter.cabs.entity.Address;
 import io.legacyfighter.cabs.entity.Driver;
 import io.legacyfighter.cabs.entity.DriverPosition;
 import io.legacyfighter.cabs.repository.DriverPositionRepository;
 import io.legacyfighter.cabs.repository.DriverRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class DriverTrackingService {
-    @Autowired
-    private DriverPositionRepository positionRepository;
 
-    @Autowired
-    private DriverRepository driverRepository;
+    private final DriverPositionRepository positionRepository;
 
-    @Autowired
-    private DistanceCalculator distanceCalculator;
+    private final DriverRepository driverRepository;
 
-    @Autowired
-    private Clock clock;
+    private final DistanceCalculator distanceCalculator;
+
+    public DriverTrackingService(DriverPositionRepository positionRepository,
+                                 DriverRepository driverRepository,
+                                 DistanceCalculator distanceCalculator) {
+        this.positionRepository = positionRepository;
+        this.driverRepository = driverRepository;
+        this.distanceCalculator = distanceCalculator;
+    }
 
     @Transactional
-    public DriverPosition registerPosition(Long driverId, double latitude, double longitude) {
+    public DriverPosition registerPosition(Long driverId,
+                                           double latitude,
+                                           double longitude,
+                                           Instant seenAt) {
         Driver driver = driverRepository.getOne(driverId);
+
         if (driver == null) {
             throw new IllegalArgumentException("Driver does not exists, id = " + driverId);
         }
+
         if (!driver.getStatus().equals(Driver.Status.ACTIVE)) {
             throw new IllegalStateException("Driver is not active, cannot register position, id = " + driverId);
         }
+
         DriverPosition position = new DriverPosition();
         position.setDriver(driver);
-        position.setSeenAt(Instant.now(clock));
+        position.setSeenAt(seenAt);
         position.setLatitude(latitude);
         position.setLongitude(longitude);
         return positionRepository.save(position);
@@ -51,13 +57,18 @@ public class DriverTrackingService {
         if (driver == null) {
             throw new IllegalArgumentException("Driver does not exists, id = " + driverId);
         }
+
         List<DriverPosition> positions = positionRepository.findByDriverAndSeenAtBetweenOrderBySeenAtAsc(driver, from, to);
         double distanceTravelled = 0;
 
         if (positions.size() > 1) {
             DriverPosition previousPosition = positions.get(0);
 
-            for (DriverPosition position : positions.stream().skip(1).collect(Collectors.toList())) {
+            List<DriverPosition> driverPositions = positions.stream()
+                    .skip(1)
+                    .collect(Collectors.toList());
+
+            for (DriverPosition position : driverPositions) {
                 distanceTravelled += distanceCalculator.calculateByGeo(
                         previousPosition.getLatitude(),
                         previousPosition.getLongitude(),
