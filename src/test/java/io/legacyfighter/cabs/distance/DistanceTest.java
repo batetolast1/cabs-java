@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DistanceTest {
 
@@ -25,6 +26,15 @@ class DistanceTest {
         assertThat(Distance.ofKm(10.123f).toKmInFloat()).isEqualTo(10.123f);
         assertThat(Distance.ofKm(10.123678f).toKmInFloat()).isEqualTo(10.123678f);
         assertThat(Distance.ZERO.toKmInFloat()).isZero();
+    }
+
+    @Test
+    void canConvertToDouble() {
+        //expect
+        assertEquals(10d, Distance.ofKm(10).toKmInDouble());
+        assertEquals(10.123d, Distance.ofKm(10.123).toKmInDouble());
+        assertEquals(10.123678d, Distance.ofKm(10.123678d).toKmInDouble());
+        assertThat(Distance.ZERO.toKmInDouble()).isZero();
     }
 
     @Test

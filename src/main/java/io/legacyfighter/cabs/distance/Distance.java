@@ -7,12 +7,20 @@ public final class Distance {
 
     public static final Distance ZERO = Distance.ofKm(0);
 
-    private static final float MILES_TO_KM_RATIO = 1.609344f;
+    private static final double MILES_TO_KM_RATIO = 1.609344d;
 
-    private final float km;
+    private final double km;
 
-    private Distance(float km) {
+    private Distance(double km) {
         this.km = km;
+    }
+
+    public static Distance ofKm(float km) {
+        return new Distance(km);
+    }
+
+    public static Distance ofKm(double km) {
+        return new Distance(km);
     }
 
     @Override
@@ -20,7 +28,14 @@ public final class Distance {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Distance distance = (Distance) o;
-        return Float.compare(distance.km, km) == 0;
+        return Double.compare(distance.km, km) == 0;
+    }
+
+    @Override
+    public String toString() {
+        return "Distance{" +
+                "km=" + km +
+                '}';
     }
 
     @Override
@@ -28,33 +43,36 @@ public final class Distance {
         return Objects.hash(km);
     }
 
-    public static Distance ofKm(float km) {
-        return new Distance(km);
+    public float toKmInFloat() {
+        return (float) this.km;
     }
 
-    public float toKmInFloat() {
-        return km;
+    public double toKmInDouble() {
+        return this.km;
     }
 
     public String printIn(String unit) {
         if (unit.equals("km")) {
-            if (km == Math.ceil(km)) {
-                return String.format(Locale.US, "%d", Math.round(km)) + "km";
+            if (this.km == Math.ceil(this.km)) {
+                return String.format(Locale.US, "%d", Math.round(this.km)) + "km";
 
             }
-            return String.format(Locale.US, "%.3f", km) + "km";
+            return String.format(Locale.US, "%.3f", this.km) + "km";
         }
+
         if (unit.equals("miles")) {
-            float km = this.km / MILES_TO_KM_RATIO;
-            if (km == Math.ceil(km)) {
-                return String.format(Locale.US, "%d", Math.round(km)) + "miles";
+            double miles = this.km / MILES_TO_KM_RATIO;
+            if (miles == Math.ceil(miles)) {
+                return String.format(Locale.US, "%d", Math.round(miles)) + "miles";
             }
-            return String.format(Locale.US, "%.3f", km) + "miles";
+            return String.format(Locale.US, "%.3f", miles) + "miles";
 
         }
+
         if (unit.equals("m")) {
-            return String.format(Locale.US, "%d", Math.round(km * 1000)) + "m";
+            return String.format(Locale.US, "%d", Math.round(this.km * 1000)) + "m";
         }
+
         throw new IllegalArgumentException("Invalid unit " + unit);
     }
 }
