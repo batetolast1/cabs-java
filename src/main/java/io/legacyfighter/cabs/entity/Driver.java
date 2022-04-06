@@ -10,17 +10,12 @@ import java.util.Set;
 @Entity
 public class Driver extends BaseEntity {
 
-    public Driver() {
-
-    }
-
     public enum Type {
-        CANDIDATE, REGULAR
+        CANDIDATE, REGULAR;
     }
 
     public enum Status {
-        ACTIVE, INACTIVE
-
+        ACTIVE, INACTIVE;
     }
 
     private Type type;
@@ -42,25 +37,15 @@ public class Driver extends BaseEntity {
 
     private boolean isOccupied;
 
-    public Set<DriverAttribute> getAttributes() {
-        return attributes;
-    }
-
-    public void setAttributes(Set<DriverAttribute> attributes) {
-        this.attributes = attributes;
-    }
-
     @OneToMany(mappedBy = "driver")
     private Set<DriverAttribute> attributes = new HashSet<>();
 
     @OneToMany(mappedBy = "driver")
     private Set<Transit> transits = new HashSet<>();
 
-    public BigDecimal calculateEarningsForTransit(Transit transit) {
-        return null;
-        // zdublować kod wyliczenia kosztu przejazdu
+    public Driver() {
+        // for JPA
     }
-
 
     public Type getType() {
         return type;
@@ -118,12 +103,28 @@ public class Driver extends BaseEntity {
         this.fee = fee;
     }
 
-    public boolean getOccupied() {
+    public boolean isOccupied() {
         return isOccupied;
     }
 
-    public void setOccupied(Boolean occupied) {
+    public void setOccupied(boolean occupied) {
         isOccupied = occupied;
+    }
+
+    public Set<DriverAttribute> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Set<DriverAttribute> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Set<Transit> getTransits() {
+        return transits;
+    }
+
+    public void setTransits(Set<Transit> transits) {
+        this.transits = transits;
     }
 
     @Override
@@ -139,7 +140,15 @@ public class Driver extends BaseEntity {
                 this.getId().equals(other.getId());
     }
 
-    public Set<Transit> getTransits() {
-        return transits;
+    public BigDecimal calculateEarningsForTransit(Transit transit) {
+        return null;
+        // zdublować kod wyliczenia kosztu przejazdu
+    }
+
+    // for test only
+    public static Driver withId(Long id) {
+        Driver driver = new Driver();
+        driver.id = id;
+        return driver;
     }
 }

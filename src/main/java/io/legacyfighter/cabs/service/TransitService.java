@@ -313,7 +313,7 @@ public class TransitService {
                             Driver driver = driverAvgPosition.getDriver();
                             if (driver.getStatus().equals(Driver.Status.ACTIVE) &&
 
-                                    driver.getOccupied() == false) {
+                                    !driver.isOccupied()) {
                                 if (transit.canProposeTo(driver)) {
                                     transit.proposeTo(driver);
                                     notificationService.notifyAboutPossibleTransit(driver.getId(), transitId);

@@ -1,17 +1,28 @@
 package io.legacyfighter.cabs.distance;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
 import java.util.Locale;
 import java.util.Objects;
 
+@Embeddable
 public final class Distance {
 
+    @Embedded
     public static final Distance ZERO = Distance.ofKm(0);
 
     private static final double MILES_TO_KM_RATIO = 1.609344d;
 
-    private final double km;
+    private double km;
+
+    protected Distance() {
+    }
 
     private Distance(double km) {
+        if (km < 0) {
+            throw new IllegalArgumentException();
+        }
+
         this.km = km;
     }
 
@@ -74,5 +85,9 @@ public final class Distance {
         }
 
         throw new IllegalArgumentException("Invalid unit " + unit);
+    }
+
+    public Distance add(Distance travelled) {
+        return new Distance(this.km + travelled.km);
     }
 }

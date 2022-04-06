@@ -21,6 +21,13 @@ class DistanceTest {
     }
 
     @Test
+    void cannotCreateNegativeDistance() {
+        // when
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> Distance.ofKm(-1));
+    }
+
+    @Test
     void canConvertToFloat() {
         assertThat(Distance.ofKm(10).toKmInFloat()).isEqualTo(10);
         assertThat(Distance.ofKm(10.123f).toKmInFloat()).isEqualTo(10.123f);
@@ -59,6 +66,12 @@ class DistanceTest {
         assertThat(Distance.ofKm(10.123f).printIn("miles")).isEqualTo("6.290miles");
         assertThat(Distance.ofKm(10.123678f).printIn("miles")).isEqualTo("6.291miles");
         assertThat(Distance.ZERO.printIn("miles")).isEqualTo("0miles");
+    }
 
+    @Test
+    void canAddDistance() {
+        assertThat(Distance.ofKm(10.0).add(Distance.ofKm(11.1))).isEqualTo(Distance.ofKm(21.1));
+        assertThat(Distance.ofKm(10.0).add(Distance.ZERO)).isEqualTo(Distance.ofKm(10.0));
+        assertThat(Distance.ZERO.add(Distance.ZERO)).isEqualTo(Distance.ZERO);
     }
 }
