@@ -7,14 +7,13 @@ import io.legacyfighter.cabs.service.DriverTrackingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class CalculateDriverTravelledDistanceIntegrationTest {
@@ -28,6 +27,9 @@ class CalculateDriverTravelledDistanceIntegrationTest {
 
     @Autowired
     private DriverTrackingService driverTrackingService;
+
+    @MockBean
+    private Clock clock;
 
     @Test
     void canCalculateDistanceWhenDriverNotFound() {
@@ -53,6 +55,8 @@ class CalculateDriverTravelledDistanceIntegrationTest {
     @Test
     void travelledDistanceWithoutMultiplePositionsIsZero() {
         // given
+        isNoon();
+        // and
         Driver driver = fixtures.aDriver();
         // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON);
@@ -67,6 +71,8 @@ class CalculateDriverTravelledDistanceIntegrationTest {
     @Test
     void canCalculateTravelledDistanceFromShortTransit() {
         // given
+        isNoon();
+        // and
         Driver driver = fixtures.aDriver();
         // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON);
@@ -83,11 +89,15 @@ class CalculateDriverTravelledDistanceIntegrationTest {
     @Test
     void canCalculateTravelledDistanceWithBreakBetweenTransits() {
         // given
+        isNoon();
+        // and
         Driver driver = fixtures.aDriver();
         // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON);
         driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, NOON);
         driverTrackingService.registerPosition(driver.getId(), 53.5, -1.74, NOON);
+        // and
+        isFivePastNoon();
         // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON_FIVE);
         driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, NOON_FIVE);
@@ -103,15 +113,21 @@ class CalculateDriverTravelledDistanceIntegrationTest {
     @Test
     void canCalculateTravelledDistanceWithMultipleBreaks() {
         // given
+        isNoon();
+        // and
         Driver driver = fixtures.aDriver();
         // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON);
         driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, NOON);
         driverTrackingService.registerPosition(driver.getId(), 53.5, -1.74, NOON);
         // and
+        isFivePastNoon();
+        // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON_FIVE);
         driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, NOON_FIVE);
         driverTrackingService.registerPosition(driver.getId(), 53.5, -1.74, NOON_FIVE);
+        // and
+        isTenPastNoon();
         // and
         driverTrackingService.registerPosition(driver.getId(), 53.3, -1.72, NOON_TEN);
         driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, NOON_TEN);
@@ -122,5 +138,17 @@ class CalculateDriverTravelledDistanceIntegrationTest {
 
         // then
         assertThat(travelledDistance.printIn("km")).isEqualTo("111.392km");
+    }
+
+    private void isNoon() {
+        when(clock.instant()).thenReturn(NOON);
+    }
+
+    private void isFivePastNoon() {
+        when(clock.instant()).thenReturn(NOON_FIVE);
+    }
+
+    private void isTenPastNoon() {
+        when(clock.instant()).thenReturn(NOON_TEN);
     }
 }
