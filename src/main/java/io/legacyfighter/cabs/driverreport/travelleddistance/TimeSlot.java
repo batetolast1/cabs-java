@@ -80,8 +80,12 @@ class TimeSlot {
         return Objects.equals(this.end, timestamp);
     }
 
-    boolean isBefore(Instant timestamp) {
+    boolean isTimeSlotBefore(Instant timestamp) {
         return this.end.isBefore(timestamp);
+    }
+
+    boolean isTimeSlotAfter(Instant timestamp) {
+        return this.beginning.isAfter(timestamp);
     }
 
     TimeSlot previous() {

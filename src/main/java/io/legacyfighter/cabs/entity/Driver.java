@@ -144,11 +144,4 @@ public class Driver extends BaseEntity {
         return null;
         // zdublować kod wyliczenia kosztu przejazdu
     }
-
-    // for test only
-    public static Driver withId(Long id) {
-        Driver driver = new Driver();
-        driver.id = id;
-        return driver;
-    }
 }

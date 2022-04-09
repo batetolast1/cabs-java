@@ -1,8 +1,6 @@
 package io.legacyfighter.cabs.driverreport.travelleddistance;
 
 import io.legacyfighter.cabs.distance.Distance;
-import io.legacyfighter.cabs.entity.Driver;
-import io.legacyfighter.cabs.entity.DriverPosition;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -16,48 +14,41 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class TravelledDistanceTest {
 
     @Test
-    void cannotCreateTravelledDistanceWithNull() {
+    void cannotCreateTravelledDistanceWithNullDriverId() {
         // given
-        Driver driver = Driver.withId(0L);
-        Long driverId = 1L;
         Instant now = Instant.now();
         TimeSlot timeSlot = TimeSlot.of(now, now.plusSeconds(10));
-        DriverPosition driverPosition = new DriverPosition(driver, now, 1.0, 1.1);
+        double latitude = 1.0;
+        double longitude = 1.1;
 
         // when
         assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> new TravelledDistance(null, timeSlot, driverPosition));
-        assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> new TravelledDistance(driverId, null, driverPosition));
-        assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> new TravelledDistance(driverId, timeSlot, null));
+                .isThrownBy(() -> new TravelledDistance(null, timeSlot, latitude, longitude));
     }
 
     @Test
-    void cannotCreateTravelledDistanceForDifferentDriver() {
+    void cannotCreateTravelledDistanceWithNullTimeSlot() {
         // given
-        Driver driver = Driver.withId(0L);
         Long driverId = 1L;
-        Instant now = Instant.now();
-        TimeSlot timeSlot = TimeSlot.of(now, now.plusSeconds(10));
-        DriverPosition driverPosition = new DriverPosition(driver, now, 1.0, 1.1);
+        double latitude = 1.0;
+        double longitude = 1.1;
 
         // when
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> new TravelledDistance(driverId, timeSlot, driverPosition));
+        assertThatExceptionOfType(NullPointerException.class)
+                .isThrownBy(() -> new TravelledDistance(driverId, null, latitude, longitude));
     }
 
     @Test
     void canCreateTravelledDistance() {
         // given
-        Driver driver = Driver.withId(1L);
         Long driverId = 1L;
         Instant now = LocalDateTime.of(2022, Month.APRIL, 3, 12, 0).atZone(ZonedDateTime.now().getZone()).toInstant();
         TimeSlot timeSlot = TimeSlot.of(now, now.plusSeconds(2));
-        DriverPosition driverPosition = new DriverPosition(driver, now, 1.0, 1.1);
+        double latitude = 1.0;
+        double longitude = 1.1;
 
         // when
-        TravelledDistance travelledDistance = new TravelledDistance(driverId, timeSlot, driverPosition);
+        TravelledDistance travelledDistance = new TravelledDistance(driverId, timeSlot, latitude, longitude);
 
         // then
         assertThat(travelledDistance.getLastLatitude()).isEqualTo(1.0);
@@ -96,11 +87,11 @@ class TravelledDistanceTest {
     }
 
     private TravelledDistance aTravelledDistance() {
-        Driver driver = Driver.withId(1L);
         Long driverId = 1L;
         Instant now = Instant.now();
         TimeSlot timeSlot = TimeSlot.of(now, now.plusSeconds(10));
-        DriverPosition driverPosition = new DriverPosition(driver, now, 1.0, 1.1);
-        return new TravelledDistance(driverId, timeSlot, driverPosition);
+        double latitude = 1.0;
+        double longitude = 1.1;
+        return new TravelledDistance(driverId, timeSlot, latitude, longitude);
     }
 }

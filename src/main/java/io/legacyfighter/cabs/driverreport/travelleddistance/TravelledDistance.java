@@ -1,7 +1,6 @@
 package io.legacyfighter.cabs.driverreport.travelleddistance;
 
 import io.legacyfighter.cabs.distance.Distance;
-import io.legacyfighter.cabs.entity.DriverPosition;
 
 import javax.persistence.Column;
 import javax.persistence.Embedded;
@@ -37,20 +36,16 @@ public class TravelledDistance {
 
     TravelledDistance(Long driverId,
                       TimeSlot timeSlot,
-                      DriverPosition driverPosition) {
+                      double lastLatitude,
+                      double lastLongitude) {
         Objects.requireNonNull(driverId);
         Objects.requireNonNull(timeSlot);
-        Objects.requireNonNull(driverPosition);
-
-        if (!Objects.equals(driverId, driverPosition.getDriver().getId())) {
-            throw new IllegalArgumentException();
-        }
 
         this.intervalId = UUID.randomUUID();
         this.driverId = driverId;
         this.timeSlot = timeSlot;
-        this.lastLatitude = driverPosition.getLatitude();
-        this.lastLongitude = driverPosition.getLongitude();
+        this.lastLatitude = lastLatitude;
+        this.lastLongitude = lastLongitude;
         this.distance = Distance.ZERO;
     }
 
@@ -81,6 +76,6 @@ public class TravelledDistance {
     }
 
     boolean isBefore(Instant timestamp) {
-        return this.timeSlot.isBefore(timestamp);
+        return this.timeSlot.isTimeSlotBefore(timestamp);
     }
 }

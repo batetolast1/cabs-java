@@ -100,14 +100,30 @@ class TimeSlotTest {
         TimeSlot timeSlot = TimeSlot.of(NOON, NOON_FIVE);
 
         // when
-        boolean isBeforeNoonFive_1 = timeSlot.isBefore(NOON_FIVE.minus(1, ChronoUnit.NANOS));
-        boolean isBeforeNoonFive = timeSlot.isBefore(NOON_FIVE);
-        boolean isBeforeNoonFive1 = timeSlot.isBefore(NOON_FIVE.plus(1, ChronoUnit.NANOS));
+        boolean isBeforeNoonFive_1 = timeSlot.isTimeSlotBefore(NOON_FIVE.minus(1, ChronoUnit.NANOS));
+        boolean isBeforeNoonFive = timeSlot.isTimeSlotBefore(NOON_FIVE);
+        boolean isBeforeNoonFive1 = timeSlot.isTimeSlotBefore(NOON_FIVE.plus(1, ChronoUnit.NANOS));
 
         // then
         assertThat(isBeforeNoonFive_1).isFalse();
         assertThat(isBeforeNoonFive).isFalse();
         assertThat(isBeforeNoonFive1).isTrue();
+    }
+
+    @Test
+    void canCheckIfTimeSlotIsAfterTimestamp() {
+        // given
+        TimeSlot timeSlot = TimeSlot.of(NOON_FIVE, NOON_TEN);
+
+        // when
+        boolean isAfterNoonFive_1 = timeSlot.isTimeSlotAfter(NOON_FIVE.minus(1, ChronoUnit.NANOS));
+        boolean isAfterNoonFive = timeSlot.isTimeSlotAfter(NOON_FIVE);
+        boolean isAfterNoonFive1 = timeSlot.isTimeSlotAfter(NOON_FIVE.plus(1, ChronoUnit.NANOS));
+
+        // then
+        assertThat(isAfterNoonFive_1).isTrue();
+        assertThat(isAfterNoonFive).isFalse();
+        assertThat(isAfterNoonFive1).isFalse();
     }
 
     @Test

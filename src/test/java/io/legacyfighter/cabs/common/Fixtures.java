@@ -20,6 +20,7 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static io.legacyfighter.cabs.entity.Driver.Status.ACTIVE;
+import static io.legacyfighter.cabs.entity.Driver.Status.INACTIVE;
 import static io.legacyfighter.cabs.entity.Driver.Type.REGULAR;
 
 @Component
@@ -103,6 +104,10 @@ public class Fixtures {
 
     public Driver aDriver() {
         return driverService.createDriver("9AAAA123456AA1AA", "last name", "first name", REGULAR, ACTIVE, "photo");
+    }
+
+    public Driver anInactiveDriver() {
+        return driverService.createDriver("9AAAA123456AA1AA", "last name", "first name", REGULAR, INACTIVE, "photo");
     }
 
     public Driver aDriver(Driver.Status status, String firstName, String lastName, String license, String photo, Driver.Type type) {

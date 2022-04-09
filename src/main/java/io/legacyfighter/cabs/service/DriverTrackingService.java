@@ -45,7 +45,7 @@ public class DriverTrackingService {
 
         DriverPosition position = driverPositionRepository.save(new DriverPosition(driver, seenAt, latitude, longitude));
 
-        travelledDistanceService.addPosition(position);
+        travelledDistanceService.addPosition(driverId, latitude, longitude, seenAt);
 
         return position;
     }
