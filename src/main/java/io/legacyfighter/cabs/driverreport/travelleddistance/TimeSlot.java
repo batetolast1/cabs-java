@@ -2,7 +2,10 @@ package io.legacyfighter.cabs.driverreport.travelleddistance;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import java.time.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 @Embeddable
@@ -51,14 +54,6 @@ class TimeSlot {
                 "beginning=" + beginning +
                 ", end=" + end +
                 '}';
-    }
-
-    static TimeSlot of(Instant beginning, Instant end) {
-        if (!end.isAfter(beginning)) {
-            throw new IllegalArgumentException(String.format("End %s is not after beginning %s", beginning, end));
-        }
-
-        return new TimeSlot(beginning, end);
     }
 
     static TimeSlot timeSlotThatContains(Instant seed) {

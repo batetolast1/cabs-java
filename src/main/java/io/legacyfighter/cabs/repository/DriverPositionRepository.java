@@ -1,7 +1,6 @@
 package io.legacyfighter.cabs.repository;
 
 import io.legacyfighter.cabs.dto.DriverPositionDTOV2;
-import io.legacyfighter.cabs.entity.Driver;
 import io.legacyfighter.cabs.entity.DriverPosition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,7 +21,7 @@ public interface DriverPositionRepository extends JpaRepository<DriverPosition, 
                                                              double longitudeMax,
                                                              Instant date);
 
-    List<DriverPosition> findByDriverAndSeenAtBetweenOrderBySeenAtAsc(Driver driver,
-                                                                      Instant from,
-                                                                      Instant to);
+    List<DriverPosition> findByDriverIdAndSeenAtGreaterThanEqualAndSeenAtLessThanEqualOrderBySeenAtAsc(Long driverId,
+                                                                                                       Instant from,
+                                                                                                       Instant to);
 }

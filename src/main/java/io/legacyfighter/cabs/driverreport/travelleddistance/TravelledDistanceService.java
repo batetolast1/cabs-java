@@ -1,26 +1,34 @@
 package io.legacyfighter.cabs.driverreport.travelleddistance;
 
 import io.legacyfighter.cabs.distance.Distance;
+import io.legacyfighter.cabs.entity.DriverPosition;
+import io.legacyfighter.cabs.repository.DriverPositionRepository;
 import io.legacyfighter.cabs.service.DistanceCalculator;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TravelledDistanceService {
 
     private final TravelledDistanceRepository travelledDistanceRepository;
 
+    private final DriverPositionRepository driverPositionRepository;
+
     private final Clock clock;
 
     private final DistanceCalculator distanceCalculator;
 
     public TravelledDistanceService(TravelledDistanceRepository travelledDistanceRepository,
+                                    DriverPositionRepository driverPositionRepository,
                                     Clock clock,
                                     DistanceCalculator distanceCalculator) {
         this.travelledDistanceRepository = travelledDistanceRepository;
+        this.driverPositionRepository = driverPositionRepository;
         this.clock = clock;
         this.distanceCalculator = distanceCalculator;
     }
@@ -36,29 +44,32 @@ public class TravelledDistanceService {
             throw new IllegalArgumentException();
         }
 
-        TravelledDistance matchedSlotForDriverPosition = travelledDistanceRepository.findTravelledDistanceByTimestampAndDriverId(seenAt, driverId);
+        TimeSlot seenAtTimeSlot = TimeSlot.timeSlotThatContains(seenAt);
 
-        if (matchedSlotForDriverPosition != null) {
-            if (matchedSlotForDriverPosition.contains(now)) {
-                addDistanceToSlot(latitude, longitude, matchedSlotForDriverPosition);
-            } else { // else is enough, see line 33
-                recalculateDistanceFor(matchedSlotForDriverPosition, driverId); // TODO
+        TravelledDistance seenAtTravelledDistance = travelledDistanceRepository.findTravelledDistanceByTimeSlotAndDriverId(seenAtTimeSlot, driverId);
+
+        if (seenAtTravelledDistance != null) {
+            if (seenAt.isAfter(seenAtTravelledDistance.getLastPositionTime())) {
+                addDistance(latitude, longitude, seenAt, seenAtTravelledDistance);
+            } else {
+                recalculateDistanceFor(seenAtTravelledDistance, seenAtTimeSlot, driverId);
             }
         } else {
             TimeSlot currentTimeSlot = TimeSlot.timeSlotThatContains(now);
+
             if (currentTimeSlot.contains(seenAt)) {
-                createSlotFor(driverId, currentTimeSlot, latitude, longitude);
+                createTravelledDistance(driverId, currentTimeSlot, latitude, longitude, seenAt);
 
                 TimeSlot previousTimeSlot = currentTimeSlot.previous();
                 if (previousTimeSlot.endsAt(seenAt)) {
                     TravelledDistance previousTravelledDistance = travelledDistanceRepository.findTravelledDistanceByTimeSlotAndDriverId(previousTimeSlot, driverId);
+
                     if (previousTravelledDistance != null) {
-                        addDistanceToSlot(latitude, longitude, previousTravelledDistance);
+                        addDistance(latitude, longitude, seenAt, previousTravelledDistance);
                     }
                 }
             } else {
-                TimeSlot timeSlotFromDriverPosition = TimeSlot.timeSlotThatContains(seenAt);
-                createSlotFor(driverId, timeSlotFromDriverPosition, latitude, longitude);
+                createTravelledDistance(driverId, seenAtTimeSlot, latitude, longitude, seenAt);
             }
         }
     }
@@ -74,41 +85,73 @@ public class TravelledDistanceService {
         return Distance.ofKm(km);
     }
 
-    private void addDistanceToSlot(double latitude,
-                                   double longitude,
-                                   TravelledDistance aggregatedDistance) {
-        double km = distanceCalculator.calculateByGeo(
+    private void addDistance(double latitude,
+                             double longitude,
+                             Instant lastPositionTime,
+                             TravelledDistance travelledDistance) {
+        double kmFromLastPosition = distanceCalculator.calculateByGeo(
                 latitude,
                 longitude,
-                aggregatedDistance.getLastLatitude(),
-                aggregatedDistance.getLastLongitude()
+                travelledDistance.getLastLatitude(),
+                travelledDistance.getLastLongitude()
         );
 
-        Distance travelledDistance = Distance.ofKm(km);
+        Distance distanceFromLastPosition = Distance.ofKm(kmFromLastPosition);
 
-        aggregatedDistance.addDistance(
-                travelledDistance,
+        travelledDistance.addDistance(
+                distanceFromLastPosition,
                 latitude,
-                longitude
+                longitude,
+                lastPositionTime
         );
     }
 
-    private void createSlotFor(Long driverId,
-                               TimeSlot timeSlot,
-                               double lastLatitude,
-                               double lastLongitude) {
+    private TravelledDistance createTravelledDistance(Long driverId,
+                                                      TimeSlot timeSlot,
+                                                      double lastLatitude,
+                                                      double lastLongitude,
+                                                      Instant lastPositionTime) {
         TravelledDistance travelledDistance = new TravelledDistance(
                 driverId,
                 timeSlot,
                 lastLatitude,
-                lastLongitude
+                lastLongitude,
+                lastPositionTime
         );
 
-        travelledDistanceRepository.save(travelledDistance);
+        return travelledDistanceRepository.save(travelledDistance);
     }
 
-    private void recalculateDistanceFor(TravelledDistance aggregatedDistance,
+    private void recalculateDistanceFor(TravelledDistance travelledDistance,
+                                        TimeSlot timeSlot,
                                         Long driverId) {
-        // TODO
+        travelledDistanceRepository.delete(travelledDistance);
+
+        List<DriverPosition> driverPositionsToRecalculate =
+                driverPositionRepository.findByDriverIdAndSeenAtGreaterThanEqualAndSeenAtLessThanEqualOrderBySeenAtAsc(
+                        driverId,
+                        timeSlot.getBeginning(),
+                        timeSlot.getEnd()
+                );
+
+        DriverPosition firstDriverPosition = driverPositionsToRecalculate.get(0);
+
+        TravelledDistance recalculatedTravelledDistance = createTravelledDistance(
+                driverId,
+                timeSlot,
+                firstDriverPosition.getLatitude(),
+                firstDriverPosition.getLongitude(),
+                firstDriverPosition.getSeenAt());
+
+        driverPositionsToRecalculate.forEach(driverPosition -> {
+                    if (!Objects.equals(driverPosition, firstDriverPosition)) {
+                        addDistance(
+                                driverPosition.getLatitude(),
+                                driverPosition.getLongitude(),
+                                driverPosition.getSeenAt(),
+                                recalculatedTravelledDistance);
+                    }
+                }
+        );
     }
 }

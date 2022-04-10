@@ -9,7 +9,6 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 class TimeSlotTest {
 
@@ -18,23 +17,9 @@ class TimeSlotTest {
     private static final Instant NOON_TEN = NOON_FIVE.plus(5, ChronoUnit.MINUTES);
 
     @Test
-    void cannotCreateTimeSlotWhenEndIsBeforeBeginning() {
-        // when
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> TimeSlot.of(NOON_FIVE, NOON));
-    }
-
-    @Test
-    void cannotCreateTimeSlotWhenEndIsEqualToBeginning() {
-        // when
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> TimeSlot.of(NOON_FIVE, NOON));
-    }
-
-    @Test
     void canCreateTimeSlot() {
         // when
-        TimeSlot timeSlot = TimeSlot.of(NOON, NOON_FIVE);
+        TimeSlot timeSlot = TimeSlot.timeSlotThatContains(NOON);
 
         // then
         assertThat(timeSlot.getBeginning()).isEqualTo(NOON);
@@ -44,8 +29,8 @@ class TimeSlotTest {
     @Test
     void canCreatePreviousTimeSlot() {
         // given
-        TimeSlot timeSlotToGetPreviousFrom = TimeSlot.of(NOON_FIVE, NOON_TEN);
-        TimeSlot expectedPreviousTimeSlot = TimeSlot.of(NOON, NOON_FIVE);
+        TimeSlot timeSlotToGetPreviousFrom = TimeSlot.timeSlotThatContains(NOON_FIVE);
+        TimeSlot expectedPreviousTimeSlot = TimeSlot.timeSlotThatContains(NOON);
 
         // when
         TimeSlot actual = timeSlotToGetPreviousFrom.previous();
@@ -57,7 +42,7 @@ class TimeSlotTest {
     @Test
     void canCheckIfTimeSlotContainsTimestamp() {
         // given
-        TimeSlot timeSlot = TimeSlot.of(NOON, NOON_FIVE);
+        TimeSlot timeSlot = TimeSlot.timeSlotThatContains(NOON);
 
         // when
         boolean containsNoon_1 = timeSlot.contains(NOON.minus(1, ChronoUnit.NANOS));
@@ -81,7 +66,7 @@ class TimeSlotTest {
     @Test
     void canCheckIfTimeSlotEndsAtTimestamp() {
         // given
-        TimeSlot timeSlot = TimeSlot.of(NOON, NOON_FIVE);
+        TimeSlot timeSlot = TimeSlot.timeSlotThatContains(NOON);
 
         // when
         boolean endsAt4 = timeSlot.endsAt(NOON.plus(5, ChronoUnit.MINUTES).minus(1, ChronoUnit.NANOS));
@@ -97,7 +82,7 @@ class TimeSlotTest {
     @Test
     void canCheckIfTimeSlotIsBeforeTimestamp() {
         // given
-        TimeSlot timeSlot = TimeSlot.of(NOON, NOON_FIVE);
+        TimeSlot timeSlot = TimeSlot.timeSlotThatContains(NOON);
 
         // when
         boolean isBeforeNoonFive_1 = timeSlot.isTimeSlotBefore(NOON_FIVE.minus(1, ChronoUnit.NANOS));
@@ -113,7 +98,7 @@ class TimeSlotTest {
     @Test
     void canCheckIfTimeSlotIsAfterTimestamp() {
         // given
-        TimeSlot timeSlot = TimeSlot.of(NOON_FIVE, NOON_TEN);
+        TimeSlot timeSlot = TimeSlot.timeSlotThatContains(NOON_FIVE);
 
         // when
         boolean isAfterNoonFive_1 = timeSlot.isTimeSlotAfter(NOON_FIVE.minus(1, ChronoUnit.NANOS));
@@ -129,7 +114,7 @@ class TimeSlotTest {
     @Test
     void canCreateTimeSlotFromSeed() {
         // given
-        TimeSlot timeSlot = TimeSlot.of(NOON, NOON_FIVE);
+        TimeSlot timeSlot = TimeSlot.timeSlotThatContains(NOON);
 
         // when
         TimeSlot timeSlot_1 = TimeSlot.timeSlotThatContains(NOON.minus(1, ChronoUnit.NANOS));

@@ -1,16 +1,14 @@
-package io.legacyfighter.cabs.integration;
+package io.legacyfighter.cabs.driverreport.travelleddistance;
 
 import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.distance.Distance;
 import io.legacyfighter.cabs.entity.Driver;
-import io.legacyfighter.cabs.entity.DriverPosition;
 import io.legacyfighter.cabs.service.DriverTrackingService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import javax.persistence.EntityNotFoundException;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 
@@ -19,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-class CalculateDriverTravelledDistanceIntegrationTest {
+class TravelledDistanceServiceTest {
 
     private static final Instant _12_00 = LocalDateTime.of(2022, Month.APRIL, 3, 12, 0).toInstant(OffsetDateTime.now().getOffset());
     private static final Instant _12_05 = _12_00.plus(5, ChronoUnit.MINUTES);
@@ -35,14 +33,8 @@ class CalculateDriverTravelledDistanceIntegrationTest {
     @Autowired
     private DriverTrackingService driverTrackingService;
 
-    @Test
-    void canCalculateDistanceWhenDriverNotFound() {
-        // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(0L, _12_00, _12_05);
-
-        // then
-        assertThat(travelledDistance).isEqualTo(Distance.ZERO);
-    }
+    @Autowired
+    private TravelledDistanceService travelledDistanceService;
 
     @Test
     void distanceIsZeroWhenZeroPositions() {
@@ -50,7 +42,7 @@ class CalculateDriverTravelledDistanceIntegrationTest {
         Driver driver = fixtures.aDriver();
 
         // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(driver.getId(), _12_00, _12_05);
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
 
         // then
         assertThat(travelledDistance).isEqualTo(Distance.ZERO);
@@ -66,7 +58,7 @@ class CalculateDriverTravelledDistanceIntegrationTest {
         registerPositionForDriver(driver, 53.3, -1.72, _12_00);
 
         // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(driver.getId(), _12_00, _12_05);
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
 
         // then
         assertThat(travelledDistance).isEqualTo(Distance.ZERO);
@@ -84,7 +76,7 @@ class CalculateDriverTravelledDistanceIntegrationTest {
         registerPositionForDriver(driver, 53.6, -1.75, _12_00.plus(3, ChronoUnit.MINUTES));
 
         // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(driver.getId(), _12_00, _12_05);
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
 
         // then
         assertThat(travelledDistance.printIn("km")).isEqualTo("22.278km");
@@ -102,12 +94,13 @@ class CalculateDriverTravelledDistanceIntegrationTest {
         registerPositionForDriver(driver, 53.6, -1.75, _12_00.plus(3, ChronoUnit.MINUTES));
         // and
         nowIs(_12_10);
+        // and
         registerPositionForDriver(driver, 53.4, -1.73, _12_05.plus(1, ChronoUnit.MINUTES));
         registerPositionForDriver(driver, 53.5, -1.74, _12_05.plus(2, ChronoUnit.MINUTES));
         registerPositionForDriver(driver, 53.6, -1.75, _12_05.plus(3, ChronoUnit.MINUTES));
 
         // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(driver.getId(), _12_00, _12_10);
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_10);
 
         // then
         assertThat(travelledDistance.printIn("km")).isEqualTo("44.557km");
@@ -137,7 +130,7 @@ class CalculateDriverTravelledDistanceIntegrationTest {
         registerPositionForDriver(driver, 53.6, -1.75, _12_10.plus(3, ChronoUnit.MINUTES));
 
         // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(driver.getId(), _12_00, _12_15);
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_15);
 
         // then
         assertThat(travelledDistance.printIn("km")).isEqualTo("66.835km");
@@ -151,68 +144,129 @@ class CalculateDriverTravelledDistanceIntegrationTest {
         nowIs(_12_05);
         // and
         registerPositionForDriver(driver, 53.4, -1.73, _12_00.plus(1, ChronoUnit.MINUTES));
-        registerPositionForDriver(driver, 53.5, -1.74, _12_00.plus(2, ChronoUnit.MINUTES));
         registerPositionForDriver(driver, 53.6, -1.75, _12_00.plus(3, ChronoUnit.MINUTES));
 
         // when
-        Distance travelledDistance = driverTrackingService.calculateTravelledDistance(driver.getId(), _12_00, _12_05);
+        driverTrackingService.registerPosition(driver.getId(), 53.5, -1.74, _12_00.plus(2, ChronoUnit.MINUTES));
 
         // then
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
         assertThat(travelledDistance.printIn("km")).isEqualTo("22.278km");
     }
 
     @Test
-    void cannotRegisterPositionWhenDriverDoesntExist() {
+    void TravelledDistanceIsZeroWhenPositionDoesntChange() {
         // given
-        double latitude = 1.0;
-        double longitude = 1.1;
+        Driver driver = fixtures.aDriver();
+        // and
+        nowIs(_12_05);
+        // and
+        registerPositionForDriver(driver, 53.4, -1.73, _12_00.plus(1, ChronoUnit.MINUTES));
+
+        // when
+        driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, _12_00.plus(2, ChronoUnit.MINUTES));
+
+        // then
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
+        assertThat(travelledDistance.printIn("km")).isEqualTo("0km");
+    }
+
+    @Test
+    void travelledDistanceIsZeroWhenThereIsOnlyOnePositionAdded() {
+        // given
+        Driver driver = fixtures.aDriver();
         // and
         nowIs(_12_05);
 
         // when
-        assertThatExceptionOfType(EntityNotFoundException.class)
-                .isThrownBy(() -> driverTrackingService.registerPosition(0L, latitude, longitude, _12_00));
+        driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, _12_00.plus(2, ChronoUnit.MINUTES));
+
+        // then
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
+        assertThat(travelledDistance.printIn("km")).isEqualTo("0km");
     }
 
     @Test
-    void cannotRegisterDriverPositionWhenDriverIsNotActive() {
+    void canCreateTravelledDistanceWhenSeenAtIsCurrentTimeSlot() {
         // given
-        Long driverId = fixtures.anInactiveDriver().getId();
+        Driver driver = fixtures.aDriver();
         // and
-        double latitude = 1.0;
-        double longitude = 1.1;
+        nowIs(_12_05.minusNanos(1));
+
+        // when
+        driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, _12_00.plus(2, ChronoUnit.MINUTES));
+
+        // then
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
+        assertThat(travelledDistance.printIn("km")).isEqualTo("0km");
+    }
+
+    @Test
+    void canCreateTravelledDistanceWhenSeenAtIsInPreviousTimeSlot() {
+        // given
+        Driver driver = fixtures.aDriver();
+        // and
+        nowIs(_12_05.plusNanos(1));
+
+        // when
+        driverTrackingService.registerPosition(driver.getId(), 53.4, -1.73, _12_00.plus(2, ChronoUnit.MINUTES));
+
+        // then
+        Distance travelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
+        assertThat(travelledDistance.printIn("km")).isEqualTo("0km");
+    }
+
+    @Test
+    void distanceIsAddedToPreviousSlotWhenSeenAtIsAtTheEndOfTimeSlot() {
+        // given
+        Driver driver = fixtures.aDriver();
+        // and
+        nowIs(_12_05);
+        // and
+        registerPositionForDriver(driver, 53.4, -1.73, _12_00.plus(1, ChronoUnit.MINUTES));
+        registerPositionForDriver(driver, 53.5, -1.74, _12_00.plus(2, ChronoUnit.MINUTES));
+
+        // when
+        driverTrackingService.registerPosition(driver.getId(), 53.6, -1.75, _12_05);
+
+        // then
+        Distance firstTravelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
+        assertThat(firstTravelledDistance.printIn("km")).isEqualTo("22.278km");
+
+        Distance secondTravelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_05, _12_10);
+        assertThat(secondTravelledDistance.printIn("km")).isEqualTo("0km");
+    }
+
+    @Test
+    void distanceIsNotAddedToPreviousSlotWhenPreviousSlotDoesntExist() {
+        // given
+        Driver driver = fixtures.aDriver();
         // and
         nowIs(_12_05);
 
         // when
-        assertThatExceptionOfType(IllegalStateException.class)
-                .isThrownBy(() -> driverTrackingService.registerPosition(driverId, latitude, longitude, _12_00));
+        driverTrackingService.registerPosition(driver.getId(), 53.6, -1.75, _12_05);
+
+        // then
+        Distance firstTravelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_00, _12_05);
+        assertThat(firstTravelledDistance.printIn("km")).isEqualTo("0km");
+
+        Distance secondTravelledDistance = travelledDistanceService.calculateDistance(driver.getId(), _12_05, _12_10);
+        assertThat(secondTravelledDistance.printIn("km")).isEqualTo("0km");
     }
 
     @Test
-    void canRegisterDriverPosition() {
+    void cannotAddPositionWhenSeenAtIsAfterCurrentTimeSlot() {
         // given
         Driver driver = fixtures.aDriver();
         Long driverId = driver.getId();
         // and
-        double latitude = 1.0;
-        double longitude = 1.1;
-        // and
-        nowIs(_12_05);
+        nowIs(_12_00);
+        Instant afterNow = _12_00.plusNanos(1);
 
         // when
-        DriverPosition driverPosition = driverTrackingService.registerPosition(driverId, latitude, longitude, _12_00);
-
-        // then
-        assertThat(driverPosition.getId()).isNotNull();
-        assertThat(driverPosition.getDriver()).isEqualTo(driver);
-        assertThat(driverPosition.getLatitude()).isEqualTo(latitude);
-        assertThat(driverPosition.getLongitude()).isEqualTo(longitude);
-        assertThat(driverPosition.getSeenAt()).isEqualTo(_12_00);
-    }
-
-    private void nowIs(Instant instant) {
-        when(clock.instant()).thenReturn(instant);
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> travelledDistanceService.addPosition(driverId, 53.4, -1.73, afterNow));
     }
 
     private void registerPositionForDriver(Driver driver,
@@ -220,5 +274,9 @@ class CalculateDriverTravelledDistanceIntegrationTest {
                                            double longitude,
                                            Instant seenAt) {
         driverTrackingService.registerPosition(driver.getId(), latitude, longitude, seenAt);
+    }
+
+    private void nowIs(Instant instant) {
+        when(clock.instant()).thenReturn(instant);
     }
 }

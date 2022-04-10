@@ -23,13 +23,15 @@ public class TravelledDistance {
     private TimeSlot timeSlot;
 
     @Column(nullable = false)
-    private double lastLatitude;
+    private Double lastLatitude;
 
     @Column(nullable = false)
-    private double lastLongitude;
+    private Double lastLongitude;
 
     @Embedded
     private Distance distance;
+
+    private Instant lastPositionTime;
 
     protected TravelledDistance() {
     }
@@ -37,9 +39,15 @@ public class TravelledDistance {
     TravelledDistance(Long driverId,
                       TimeSlot timeSlot,
                       double lastLatitude,
-                      double lastLongitude) {
+                      double lastLongitude,
+                      Instant lastPositionTime) {
         Objects.requireNonNull(driverId);
         Objects.requireNonNull(timeSlot);
+        Objects.requireNonNull(lastPositionTime);
+
+        if (!timeSlot.contains(lastPositionTime)) {
+            throw new IllegalArgumentException();
+        }
 
         this.intervalId = UUID.randomUUID();
         this.driverId = driverId;
@@ -47,6 +55,7 @@ public class TravelledDistance {
         this.lastLatitude = lastLatitude;
         this.lastLongitude = lastLongitude;
         this.distance = Distance.ZERO;
+        this.lastPositionTime = lastPositionTime;
     }
 
     double getLastLatitude() {
@@ -61,10 +70,22 @@ public class TravelledDistance {
         return Distance.ofKm(this.distance.toKmInDouble());
     }
 
-    void addDistance(Distance travelled, double latitude, double longitude) {
+    Instant getLastPositionTime() {
+        return lastPositionTime;
+    }
+
+    void addDistance(Distance travelled,
+                     double latitude,
+                     double longitude,
+                     Instant lastPositionTime) {
+        if (!this.lastPositionTime.isBefore(lastPositionTime)) {
+            throw new IllegalArgumentException();
+        }
+
         this.distance = distance.add(travelled);
         this.lastLatitude = latitude;
         this.lastLongitude = longitude;
+        this.lastPositionTime = lastPositionTime;
     }
 
     boolean contains(Instant timestamp) {
