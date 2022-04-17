@@ -22,6 +22,8 @@ public class AddressDTO {
 
     private String name;
 
+    private Integer hash;
+
     public AddressDTO() {
     }
 
@@ -42,7 +44,8 @@ public class AddressDTO {
                       Integer buildingNumber,
                       Integer additionalNumber,
                       String postalCode,
-                      String name) {
+                      String name,
+                      Integer hash) {
         this.country = country;
         this.district = district;
         this.city = city;
@@ -51,6 +54,7 @@ public class AddressDTO {
         this.additionalNumber = additionalNumber;
         this.postalCode = postalCode;
         this.name = name;
+        this.hash = hash;
     }
 
     public AddressDTO(Address a) {
@@ -61,7 +65,8 @@ public class AddressDTO {
                 a.getBuildingNumber(),
                 a.getAdditionalNumber(),
                 a.getPostalCode(),
-                a.getName());
+                a.getName(),
+                a.getHash());
     }
 
     public String getCountry() {
@@ -128,17 +133,25 @@ public class AddressDTO {
         this.name = name;
     }
 
+    public Integer getHash() {
+        return hash;
+    }
+
+    public void setHash(Integer hash) {
+        this.hash = hash;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AddressDTO that = (AddressDTO) o;
-        return Objects.equals(country, that.country) && Objects.equals(district, that.district) && Objects.equals(city, that.city) && Objects.equals(street, that.street) && Objects.equals(buildingNumber, that.buildingNumber) && Objects.equals(additionalNumber, that.additionalNumber) && Objects.equals(postalCode, that.postalCode) && Objects.equals(name, that.name);
+        return Objects.equals(country, that.country) && Objects.equals(district, that.district) && Objects.equals(city, that.city) && Objects.equals(street, that.street) && Objects.equals(buildingNumber, that.buildingNumber) && Objects.equals(additionalNumber, that.additionalNumber) && Objects.equals(postalCode, that.postalCode) && Objects.equals(name, that.name) && Objects.equals(hash, that.hash);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(country, district, city, street, buildingNumber, additionalNumber, postalCode, name);
+        return Objects.hash(country, district, city, street, buildingNumber, additionalNumber, postalCode, name, hash);
     }
 
     public Address toAddressEntity() {

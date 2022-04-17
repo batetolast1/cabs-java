@@ -13,6 +13,7 @@ import io.legacyfighter.cabs.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -22,6 +23,7 @@ import java.util.stream.IntStream;
 import static io.legacyfighter.cabs.entity.Driver.Status.ACTIVE;
 import static io.legacyfighter.cabs.entity.Driver.Status.INACTIVE;
 import static io.legacyfighter.cabs.entity.Driver.Type.REGULAR;
+import static org.mockito.Mockito.when;
 
 @Component
 public class Fixtures {
@@ -52,6 +54,15 @@ public class Fixtures {
 
     @Autowired
     private ContractService contractService;
+
+    @Autowired
+    TransitService transitService;
+
+    @Autowired
+    DriverSessionService driverSessionService;
+
+    @Autowired
+    DriverTrackingService driverTrackingService;
 
     public Transit aCompletedTransitAt(Driver driver, LocalDateTime dateTime) {
         Instant date = dateTime.toInstant(OffsetDateTime.now().getOffset());
@@ -87,6 +98,25 @@ public class Fixtures {
         return transitRepository.save(transit);
     }
 
+    public void aRequestedAndCompletedTransit(Instant publishedAt,
+                                              Instant completedAt,
+                                              Client client,
+                                              Driver driver,
+                                              Address from,
+                                              Address to,
+                                              Clock clock) {
+        when(clock.instant()).thenReturn(publishedAt);
+        driverTrackingService.registerPosition(driver.getId(), 1, 1, publishedAt.minusNanos(1));
+
+        Transit transit = transitService.createTransit(client.getId(), from, to, CarType.CarClass.VAN);
+        transitService.publishTransit(transit.getId());
+        transitService.acceptTransit(driver.getId(), transit.getId());
+        transitService.startTransit(driver.getId(), transit.getId());
+
+        when(clock.instant()).thenReturn(completedAt);
+        transitService.completeTransit(driver.getId(), transit.getId(), to);
+    }
+
     public void driverHasFee(Driver driver, DriverFee.FeeType feeType, int amount, Money minimumFee) {
         DriverFee driverFee = new DriverFee();
         driverFee.setDriver(driver);
@@ -113,6 +143,14 @@ public class Fixtures {
     public Driver aDriver(Driver.Status status, String firstName, String lastName, String license, String photo, Driver.Type type) {
         return driverService.createDriver(license, lastName, firstName, type, status, photo);
     }
+
+    public Driver aNearbyDriver() {
+        Driver driver = aDriver();
+        driverHasFee(driver, DriverFee.FeeType.FLAT, 10, Money.ZERO);
+        driverSessionService.logIn(driver.getId(), "9AAAA123456AA1AA", CarType.CarClass.VAN, "car brand");
+        return driver;
+    }
+
 
     public void driverHasAttribute(Driver driver, DriverAttribute.DriverAttributeName attributeName, String attributeValue) {
         driverService.addAttribute(driver.getId(), attributeName, attributeValue);

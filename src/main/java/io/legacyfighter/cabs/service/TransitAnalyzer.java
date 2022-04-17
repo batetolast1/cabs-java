@@ -6,7 +6,6 @@ import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.repository.AddressRepository;
 import io.legacyfighter.cabs.repository.ClientRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,14 +17,20 @@ import java.util.stream.Collectors;
 
 @Service
 public class TransitAnalyzer {
-    @Autowired
-    TransitRepository transitRepository;
 
-    @Autowired
-    ClientRepository clientRepository;
+    private final TransitRepository transitRepository;
 
-    @Autowired
-    AddressRepository addressRepository;
+    private final ClientRepository clientRepository;
+
+    private final AddressRepository addressRepository;
+
+    public TransitAnalyzer(TransitRepository transitRepository,
+                           ClientRepository clientRepository,
+                           AddressRepository addressRepository) {
+        this.transitRepository = transitRepository;
+        this.clientRepository = clientRepository;
+        this.addressRepository = addressRepository;
+    }
 
     @Transactional
     public List<Address> analyze(Long clientId, Long addressId) {
@@ -42,48 +47,46 @@ public class TransitAnalyzer {
 
     // Brace yourself, deadline is coming... They made me to do it this way.
     // Tested!
-    private List<Address> analyze(Client client, Address from, Transit t) {
-        List<Transit> ts;
+    private List<Address> analyze(Client client, Address from, Transit transitToAnalyze) {
+        List<Transit> transits;
 
-        if (t == null) {
-            ts = transitRepository.findAllByClientAndFromAndStatusOrderByDateTimeDesc(client, from, Transit.Status.COMPLETED);
+        if (transitToAnalyze == null) {
+            transits = transitRepository.findAllByClientAndFromAndStatusOrderByDateTimeDesc(client, from, Transit.Status.COMPLETED);
         } else {
-            ts = transitRepository.findAllByClientAndFromAndPublishedAfterAndStatusOrderByDateTimeDesc(client, from, t.getPublished(), Transit.Status.COMPLETED);;
+            transits = transitRepository.findAllByClientAndFromAndPublishedAfterAndStatusOrderByDateTimeDesc(client, from, transitToAnalyze.getPublished(), Transit.Status.COMPLETED);
         }
 
         // Workaround for performance reasons.
-        if (ts.size() > 1000 && client.getId() == 666) {
+        if (transits.size() > 1000 && client.getId() == 666) {
             // No one will see a difference for this customer ;)
-            ts = ts.stream().limit(1000).collect(Collectors.toList());
-        }
-
-//        if (ts.isEmpty()) {
-//            return List.of(t.getTo());
-//        }
-
-        if (t != null ) {
-            ts = ts.stream()
-                    .filter(_t -> t.getCompleteAt().plus(15, ChronoUnit.MINUTES).isAfter(_t.getStarted()))
-                    // Before 2018-01-01:
-                    //.filter(t -> t.getCompleteAt().plus(15, ChronoUnit.MINUTES).isAfter(t.getPublished()))
+            transits = transits.stream()
+                    .limit(1000)
                     .collect(Collectors.toList());
         }
 
-        if (ts.isEmpty()) {
-            return List.of(t.getTo());
+        if (transitToAnalyze != null) {
+            transits = transits.stream()
+                    .filter(transit -> transitToAnalyze.getCompleteAt().plus(15, ChronoUnit.MINUTES).isAfter(transit.getStarted()))
+                    .collect(Collectors.toList());
         }
 
-        Comparator<List> comparator = Comparator.comparingInt(List::size);
+        if (transits.isEmpty()) {
+            return List.of(transitToAnalyze.getTo());
+        }
 
-        return ts.stream()
-                .map(_t -> {
+        Comparator<List<Address>> comparator = Comparator.comparingInt(List::size);
+
+        return transits.stream()
+                .map(transit -> {
                     List<Address> result = new ArrayList<>();
-                    result.add(_t.getFrom());
-                    result.addAll(analyze(client, _t.getTo(), _t));
+                    result.add(transit.getFrom());
+                    result.addAll(analyze(client, transit.getTo(), transit));
                     return result;
                 })
                 .sorted(comparator.reversed())
                 .collect(Collectors.toList())
-                .stream().findFirst().orElse(new ArrayList<>());
+                .stream()
+                .findFirst()
+                .orElse(new ArrayList<>());
     }
 }

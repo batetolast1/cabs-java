@@ -1,14 +1,16 @@
 package io.legacyfighter.cabs.repository;
 
 import io.legacyfighter.cabs.entity.Address;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class AddressRepository {
-    @Autowired
-    AddressRepositoryInterface addressRepositoryInterface;
+
+    private final AddressRepositoryInterface addressRepositoryInterface;
+
+    public AddressRepository(AddressRepositoryInterface addressRepositoryInterface) {
+        this.addressRepositoryInterface = addressRepositoryInterface;
+    }
 
     // FIX ME: To replace with getOrCreate method instead of that?
     // Actual workaround for address uniqueness problem: assign result from repo.save to variable for later usage
@@ -30,3 +32,4 @@ public class AddressRepository {
         return addressRepositoryInterface.getOne(id);
     }
 }
+

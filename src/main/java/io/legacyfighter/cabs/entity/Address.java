@@ -1,19 +1,13 @@
 package io.legacyfighter.cabs.entity;
 
 import io.legacyfighter.cabs.common.BaseEntity;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.PrePersist;
 import java.util.Objects;
 
 @Entity
 public class Address extends BaseEntity {
-
-    public Address() {
-
-    }
 
     private String country;
 
@@ -31,11 +25,23 @@ public class Address extends BaseEntity {
 
     private String name;
 
-    @Column(unique=true)
+    @Column(unique = true)
     private Integer hash;
+
+    public Address() {
+        // for JPA
+    }
 
     public Address(String country, String city, String street, int buildingNumber) {
         this.country = country;
+        this.city = city;
+        this.street = street;
+        this.buildingNumber = buildingNumber;
+    }
+
+    public Address(String country, String district, String city, String street, int buildingNumber) {
+        this.country = country;
+        this.district = district;
         this.city = city;
         this.street = street;
         this.buildingNumber = buildingNumber;

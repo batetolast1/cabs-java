@@ -88,6 +88,7 @@ class SqlBasedDriverReportCreator {
                     "af.additional_number AS AF_ADDITIONAL_NUMBER, " +
                     "af.postal_code AS AF_POSTAL_CODE, " +
                     "af.name AS AF_NAME, " +
+                    "af.hash AS AF_HASH, " +
                     "" +
                     "ato.country AS ATO_COUNTRY, " +
                     "ato.district AS ATO_DISTRICT, " +
@@ -97,6 +98,7 @@ class SqlBasedDriverReportCreator {
                     "ato.additional_number AS ATO_ADDITIONAL_NUMBER, " +
                     "ato.postal_code AS ATO_POSTAL_CODE, " +
                     "ato.name AS ATO_NAME, " +
+                    "ato.hash AS ATO_HASH, " +
                     "" +
                     "cli.id AS CLIENT_ID, " +
                     "cli.type AS CLIENT_TYPE, " +
@@ -325,7 +327,8 @@ class SqlBasedDriverReportCreator {
                 addressFrom.get("AF_NUMBER") == null ? null : ((Integer) addressFrom.get("AF_NUMBER")),
                 addressFrom.get("AF_ADDITIONAL_NUMBER") == null ? null : ((Integer) addressFrom.get("AF_ADDITIONAL_NUMBER")),
                 (String) addressFrom.get("AF_POSTAL_CODE"),
-                (String) addressFrom.get("AF_NAME")
+                (String) addressFrom.get("AF_NAME"),
+                addressFrom.get("AF_HASH") == null ? null : ((Integer) addressFrom.get("AF_HASH"))
         );
     }
 
@@ -338,7 +341,8 @@ class SqlBasedDriverReportCreator {
                 addressTo.get("ATO_NUMBER") == null ? null : ((Integer) addressTo.get("ATO_NUMBER")),
                 addressTo.get("ATO_ADDITIONAL_NUMBER") == null ? null : ((Integer) addressTo.get("ATO_ADDITIONAL_NUMBER")),
                 (String) addressTo.get("ATO_POSTAL_CODE"),
-                (String) addressTo.get("ATO_NAME")
+                (String) addressTo.get("ATO_NAME"),
+                addressTo.get("ATO_HASH") == null ? null : ((Integer) addressTo.get("ATO_HASH"))
         );
     }
 

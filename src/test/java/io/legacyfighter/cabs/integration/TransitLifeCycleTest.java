@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.Instant;
-import java.util.UUID;
 
 import static io.legacyfighter.cabs.entity.CarType.CarClass.VAN;
 import static org.assertj.core.api.Assertions.*;
@@ -338,9 +337,9 @@ class TransitLifeCycleTest {
     @Test
     void canChangeTransitDestinationWhenTransitIsAccepted() {
         // given
-        AddressDTO from = aRandomAddress();
-        AddressDTO to = aRandomAddress();
-        AddressDTO newTo = aRandomAddress();
+        AddressDTO from = new AddressDTO(fixtures.anAddress());
+        AddressDTO to = new AddressDTO(fixtures.anAddress());
+        AddressDTO newTo = new AddressDTO(fixtures.anAddress());
         // and
         Long driverId = aNearbyDriver();
         // and
@@ -1258,7 +1257,7 @@ class TransitLifeCycleTest {
     }
 
     private AddressDTO aFarAwayAddress(Transit t) {
-        AddressDTO addressDTO = new AddressDTO("country", "city", UUID.randomUUID().toString(), 1);
+        AddressDTO addressDTO = aRandomAddress();
 
         when(geocodingService.geocodeAddress(any())).thenReturn(new double[]{1000, 1000});
         when(geocodingService.geocodeAddress(t.getFrom())).thenReturn(new double[]{1, 1});
@@ -1291,6 +1290,6 @@ class TransitLifeCycleTest {
     }
 
     private AddressDTO aRandomAddress() {
-        return new AddressDTO("country", "city", UUID.randomUUID().toString(), 1);
+        return new AddressDTO(fixtures.anAddress());
     }
 }
