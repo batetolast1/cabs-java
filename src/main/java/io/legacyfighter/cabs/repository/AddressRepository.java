@@ -3,6 +3,8 @@ package io.legacyfighter.cabs.repository;
 import io.legacyfighter.cabs.entity.Address;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public class AddressRepository {
 
@@ -18,7 +20,7 @@ public class AddressRepository {
         address.hash();
 
         if (address.getId() == null) {
-            Address existingAddress = addressRepositoryInterface.findByHash(address.getHash());
+            Address existingAddress = findByHash(address.getHash());
 
             if (existingAddress != null) {
                 return existingAddress;
@@ -31,5 +33,12 @@ public class AddressRepository {
     public Address getOne(Long id) {
         return addressRepositoryInterface.getOne(id);
     }
-}
 
+    public Optional<Address> findById(Long addressId) {
+        return addressRepositoryInterface.findById(addressId);
+    }
+
+    public Address findByHash(Integer hash) {
+        return addressRepositoryInterface.findByHash(hash);
+    }
+}

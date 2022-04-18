@@ -5,9 +5,10 @@ import io.legacyfighter.cabs.dto.AddressDTO;
 import io.legacyfighter.cabs.dto.DriverPositionDTOV2;
 import io.legacyfighter.cabs.dto.TransitDTO;
 import io.legacyfighter.cabs.entity.*;
+import io.legacyfighter.cabs.entity.events.TransitCompleted;
 import io.legacyfighter.cabs.money.Money;
 import io.legacyfighter.cabs.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,47 +24,68 @@ import static java.util.stream.Collectors.toList;
 // If this class will still be here in 2022 I will quit.
 @Service
 public class TransitService {
-    @Autowired
-    private DriverRepository driverRepository;
 
-    @Autowired
-    private TransitRepository transitRepository;
+    private final DriverRepository driverRepository;
 
-    @Autowired
-    private ClientRepository clientRepository;
+    private final TransitRepository transitRepository;
 
-    @Autowired
-    private InvoiceGenerator invoiceGenerator;
+    private final ClientRepository clientRepository;
 
-    @Autowired
-    private DriverNotificationService notificationService;
+    private final InvoiceGenerator invoiceGenerator;
 
-    @Autowired
-    private DistanceCalculator distanceCalculator;
+    private final DriverNotificationService notificationService;
 
-    @Autowired
-    private DriverPositionRepository driverPositionRepository;
+    private final DistanceCalculator distanceCalculator;
 
-    @Autowired
-    private DriverSessionRepository driverSessionRepository;
+    private final DriverPositionRepository driverPositionRepository;
 
-    @Autowired
-    private CarTypeService carTypeService;
+    private final DriverSessionRepository driverSessionRepository;
 
-    @Autowired
-    private GeocodingService geocodingService;
+    private final CarTypeService carTypeService;
 
-    @Autowired
-    private AddressRepository addressRepository;
+    private final GeocodingService geocodingService;
 
-    @Autowired
-    private DriverFeeService driverFeeService;
+    private final AddressRepository addressRepository;
 
-    @Autowired
-    private Clock clock;
+    private final DriverFeeService driverFeeService;
 
-    @Autowired
-    private AwardsService awardsService;
+    private final Clock clock;
+
+    private final AwardsService awardsService;
+
+    private final ApplicationEventPublisher eventPublisher;
+
+    public TransitService(GeocodingService geocodingService,
+                          DriverRepository driverRepository,
+                          TransitRepository transitRepository,
+                          ClientRepository clientRepository,
+                          InvoiceGenerator invoiceGenerator,
+                          DriverNotificationService notificationService,
+                          DistanceCalculator distanceCalculator,
+                          Clock clock,
+                          DriverPositionRepository driverPositionRepository,
+                          AwardsService awardsService,
+                          DriverSessionRepository driverSessionRepository,
+                          DriverFeeService driverFeeService,
+                          CarTypeService carTypeService,
+                          AddressRepository addressRepository,
+                          ApplicationEventPublisher eventPublisher) {
+        this.geocodingService = geocodingService;
+        this.driverRepository = driverRepository;
+        this.transitRepository = transitRepository;
+        this.clientRepository = clientRepository;
+        this.invoiceGenerator = invoiceGenerator;
+        this.notificationService = notificationService;
+        this.distanceCalculator = distanceCalculator;
+        this.clock = clock;
+        this.driverPositionRepository = driverPositionRepository;
+        this.awardsService = awardsService;
+        this.driverSessionRepository = driverSessionRepository;
+        this.driverFeeService = driverFeeService;
+        this.carTypeService = carTypeService;
+        this.addressRepository = addressRepository;
+        this.eventPublisher = eventPublisher;
+    }
 
     @Transactional
     public Transit createTransit(TransitDTO transitDTO) {
@@ -433,9 +455,24 @@ public class TransitService {
         Money driverFee = driverFeeService.calculateDriverFee(transitId);
         transit.setDriversFee(driverFee);
         driverRepository.save(driver);
+
         awardsService.registerMiles(transit.getClient().getId(), transitId);
+
         transitRepository.save(transit);
+
         invoiceGenerator.generate(transit.getPrice().toInt(), transit.getClient().getName() + " " + transit.getClient().getLastName());
+
+        eventPublisher.publishEvent(
+                new TransitCompleted(
+                        transit.getClient().getId(),
+                        transitId,
+                        transit.getFrom().getHash(),
+                        transit.getTo().getHash(),
+                        transit.getStarted(),
+                        transit.getCompleteAt(),
+                        Instant.now(clock)
+                )
+        );
     }
 
     @Transactional
