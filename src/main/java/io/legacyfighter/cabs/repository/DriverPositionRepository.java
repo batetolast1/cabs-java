@@ -24,4 +24,6 @@ public interface DriverPositionRepository extends JpaRepository<DriverPosition, 
     List<DriverPosition> findByDriverIdAndSeenAtGreaterThanEqualAndSeenAtLessThanEqualOrderBySeenAtAsc(Long driverId,
                                                                                                        Instant from,
                                                                                                        Instant to);
+
+    List<DriverPosition> findAllBySeenAtBefore(Instant date);
 }
