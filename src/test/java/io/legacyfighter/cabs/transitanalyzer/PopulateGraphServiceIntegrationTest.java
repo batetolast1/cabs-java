@@ -5,7 +5,6 @@ import io.legacyfighter.cabs.common.Fixtures;
 import io.legacyfighter.cabs.entity.Address;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Driver;
-import io.legacyfighter.cabs.repository.TransitRepository;
 import io.legacyfighter.cabs.service.GeocodingService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,25 +50,22 @@ class PopulateGraphServiceIntegrationTest {
     }
 
     @Autowired
-    Fixtures fixtures;
+    private Fixtures fixtures;
 
     @Autowired
-    TransitRepository transitRepository;
-
-    @Autowired
-    GraphTransitAnalyzer graphTransitAnalyzer;
+    private GraphTransitAnalyzer graphTransitAnalyzer;
 
     @MockBean
-    GeocodingService geocodingService;
+    private GeocodingService geocodingService;
 
     @MockBean
-    Clock clock;
+    private Clock clock;
 
     @Autowired
-    PopulateGraphService populateGraphService;
+    private PopulateGraphService populateGraphService;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         fixtures.anActiveCarCategory(VAN);
 
         when(clock.instant()).thenReturn(NOW);

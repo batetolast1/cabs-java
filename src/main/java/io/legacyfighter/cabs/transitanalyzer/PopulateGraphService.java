@@ -10,6 +10,7 @@ import static io.legacyfighter.cabs.entity.Transit.Status.COMPLETED;
 class PopulateGraphService {
 
     private final TransitRepository transitRepository;
+
     private final GraphTransitAnalyzer graphTransitAnalyzer;
 
     PopulateGraphService(TransitRepository transitRepository,
