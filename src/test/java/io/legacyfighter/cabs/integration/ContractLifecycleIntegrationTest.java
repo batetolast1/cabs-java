@@ -51,18 +51,16 @@ class ContractLifecycleIntegrationTest {
     @Test
     void canGenerateCorrectContractNo() {
         // given
-        fixtures.aContractFor("partner");
-        fixtures.aContractFor("partner");
-        fixtures.aContractFor("different partner");
-        // and
-        ContractDTO contractDTO = aContractDTO("partner");
+        ContractDTO contractDTO = aContractDTO();
+        contractService.createContract(contractDTO);
+        contractService.createContract(contractDTO);
 
         // when
         Contract contract = contractService.createContract(contractDTO);
 
         // then
         ContractDTO loaded = loadContract(contract);
-        assertThat(loaded.getContractNo()).isEqualTo("C/3/partner");
+        assertThat(loaded.getContractNo()).isEqualTo("C/3/" + contractDTO.getPartnerName());
     }
 
     @Test

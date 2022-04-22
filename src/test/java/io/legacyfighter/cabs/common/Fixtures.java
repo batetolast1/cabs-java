@@ -261,7 +261,7 @@ public class Fixtures {
 
     public Contract aContractFor(String partnerName) {
         ContractDTO contractDTO = new ContractDTO();
-        contractDTO.setPartnerName(partnerName);
+        contractDTO.setPartnerName(partnerName + " " + LocalDateTime.now());
         contractDTO.setSubject("subject");
         return contractService.createContract(contractDTO);
     }

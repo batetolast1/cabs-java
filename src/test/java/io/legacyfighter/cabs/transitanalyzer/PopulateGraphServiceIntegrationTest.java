@@ -6,7 +6,6 @@ import io.legacyfighter.cabs.entity.Address;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.entity.Driver;
 import io.legacyfighter.cabs.service.GeocodingService;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +43,7 @@ class PopulateGraphServiceIntegrationTest {
     static class NoOpEventPublisher implements ApplicationEventPublisher {
 
         @Override
-        public void publishEvent(@NotNull Object event) {
+        public void publishEvent(Object event) {
             // no-op
         }
     }

@@ -1,14 +1,18 @@
 package io.legacyfighter.cabs.transitanalyzer;
 
+import org.neo4j.dbms.api.DatabaseManagementService;
+import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PreDestroy;
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+
+import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
 
 @Configuration
 class Neo4JConfig {
@@ -17,18 +21,27 @@ class Neo4JConfig {
     private String dbPath;
 
     @Bean
-    GraphDatabaseService graphDatabaseService() {
-        File storeDir = new File("db/" + dbPath);
-        return new GraphDatabaseFactory().newEmbeddedDatabase(storeDir);
+    DatabaseManagementService databaseManagementService() {
+        return new DatabaseManagementServiceBuilder(Path.of("db/", dbPath)).build();
     }
 
     @Bean
-    GraphTransitAnalyzer graphTransitAnalyzer() {
-        return new GraphTransitAnalyzer(graphDatabaseService());
+    GraphDatabaseService graphDatabaseService(DatabaseManagementService databaseManagementService) {
+        return databaseManagementService.database(DEFAULT_DATABASE_NAME);
+    }
+
+    @Bean
+    GraphTransitAnalyzer graphTransitAnalyzer(DatabaseManagementService databaseManagementService,
+                                              GraphDatabaseService graphDatabaseService) {
+        return new GraphTransitAnalyzer(databaseManagementService, databaseManagementService.database(DEFAULT_DATABASE_NAME));
     }
 
     @PreDestroy
     void cleanDbDir() {
-        FileSystemUtils.deleteRecursively(new File("db"));
+        try {
+            FileSystemUtils.deleteRecursively(Path.of("db/", dbPath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
