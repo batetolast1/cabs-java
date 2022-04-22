@@ -32,6 +32,10 @@ public class Money {
         return new Money((int) Math.round(percentage * value / 100.0));
     }
 
+    public Money percentage(Double percentage) {
+        return new Money((int) Math.round(percentage * value / 100));
+    }
+
     public Integer toInt() {
         return value;
     }

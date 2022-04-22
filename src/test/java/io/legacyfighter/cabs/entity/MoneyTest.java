@@ -28,7 +28,7 @@ class MoneyTest {
         //expect
         assertThat(new Money(1000)).isEqualTo(new Money(500).add(new Money(500)));
         assertThat(new Money(1042)).isEqualTo(new Money(1020).add(new Money(22)));
-        assertThat(Money.ZERO).isEqualTo(Money.ZERO.add(Money.ZERO));
+        assertThat(Money.ZERO.add(Money.ZERO)).isEqualTo(Money.ZERO);
         assertThat(new Money(-2)).isEqualTo(new Money(-4).add(new Money(2)));
     }
 
@@ -50,5 +50,13 @@ class MoneyTest {
         assertThat(new Money(4400).percentage(30).toString()).hasToString("13.20");
         assertThat(new Money(100).percentage(30).toString()).hasToString("0.30");
         assertThat(new Money(1).percentage(40).toString()).hasToString("0.00");
+
+        assertThat(new Money(10000).percentage(30.0).toString()).hasToString("30.00");
+        assertThat(new Money(8800).percentage(30.0).toString()).hasToString("26.40");
+        assertThat(new Money(8800).percentage(100.0).toString()).hasToString("88.00");
+        assertThat(new Money(8800).percentage(0.0).toString()).hasToString("0.00");
+        assertThat(new Money(4400).percentage(30.0).toString()).hasToString("13.20");
+        assertThat(new Money(100).percentage(30.0).toString()).hasToString("0.30");
+        assertThat(new Money(1).percentage(40.0).toString()).hasToString("0.00");
     }
 }
