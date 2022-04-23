@@ -13,6 +13,7 @@ public class ExtendedInsurance extends RoleForRepairer {
         super(party);
     }
 
+    @Override
     public RepairingResult handle(RepairRequest repairRequest) {
         Set<Parts> handledParts = new HashSet<>(repairRequest.getPartsToRepair());
         handledParts.remove(Parts.PAINT);

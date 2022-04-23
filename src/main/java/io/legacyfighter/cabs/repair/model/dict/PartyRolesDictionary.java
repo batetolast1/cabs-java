@@ -6,12 +6,13 @@ import io.legacyfighter.cabs.repair.model.roles.empty.Insured;
 import io.legacyfighter.cabs.repair.model.roles.repair.ExtendedInsurance;
 import io.legacyfighter.cabs.repair.model.roles.repair.Warranty;
 
-/*
- Enum that emulates database dictionary
+/**
+ * Enum that emulates database dictionary
  */
 public enum PartyRolesDictionary {
 
-    INSURER(ExtendedInsurance.class), INSURED(Insured.class), GUARANTOR(Warranty.class), CUSTOMER(Customer.class);
+    INSURER(ExtendedInsurance.class), INSURED(Insured.class),
+    GUARANTOR(Warranty.class), CUSTOMER(Customer.class);
 
     private final String name;
 

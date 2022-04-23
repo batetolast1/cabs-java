@@ -11,7 +11,8 @@ public class RepairRequest {
 
     private final Set<Parts> partsToRepair;
 
-    public RepairRequest(PartyId vehicle, Set<Parts> parts) {
+    public RepairRequest(PartyId vehicle,
+                         Set<Parts> parts) {
         this.vehicle = vehicle;
         this.partsToRepair = parts;
     }

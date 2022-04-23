@@ -4,7 +4,7 @@ import io.legacyfighter.cabs.party.model.party.Party;
 import io.legacyfighter.cabs.party.model.role.PartyBasedRole;
 
 /**
- * Base class for all commands that are able to handle @{@link RepairRequest RepairRequest}
+ * Base class for all commands that are able to handle {@link RepairRequest}
  */
 public abstract class RoleForRepairer extends PartyBasedRole {
 

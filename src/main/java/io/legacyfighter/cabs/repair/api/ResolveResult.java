@@ -17,7 +17,10 @@ public class ResolveResult {
     private Set<Parts> acceptedParts;
     private final Status status;
 
-    public ResolveResult(Status status, UUID handlingParty, Money totalCost, Set<Parts> acceptedParts) {
+    public ResolveResult(Status status,
+                         UUID handlingParty,
+                         Money totalCost,
+                         Set<Parts> acceptedParts) {
         this.status = status;
         this.handlingParty = handlingParty;
         this.totalCost = totalCost;
