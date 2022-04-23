@@ -17,12 +17,12 @@ import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAM
 @Configuration
 class Neo4JConfig {
 
-    @Value("${neo4j.db.file}")
+    @Value("${neo4j.db.path}")
     private String dbPath;
 
     @Bean
     DatabaseManagementService databaseManagementService() {
-        return new DatabaseManagementServiceBuilder(Path.of("db/", dbPath)).build();
+        return new DatabaseManagementServiceBuilder(Path.of("target/neo4j/", dbPath)).build();
     }
 
     @Bean
@@ -31,15 +31,14 @@ class Neo4JConfig {
     }
 
     @Bean
-    GraphTransitAnalyzer graphTransitAnalyzer(DatabaseManagementService databaseManagementService,
-                                              GraphDatabaseService graphDatabaseService) {
+    GraphTransitAnalyzer graphTransitAnalyzer(DatabaseManagementService databaseManagementService) {
         return new GraphTransitAnalyzer(databaseManagementService, databaseManagementService.database(DEFAULT_DATABASE_NAME));
     }
 
     @PreDestroy
     void cleanDbDir() {
         try {
-            FileSystemUtils.deleteRecursively(Path.of("db/", dbPath));
+            FileSystemUtils.deleteRecursively(Path.of("target/neo4j/", dbPath));
         } catch (IOException e) {
             e.printStackTrace();
         }
