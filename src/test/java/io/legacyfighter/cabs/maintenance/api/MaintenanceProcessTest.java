@@ -1,8 +1,8 @@
 package io.legacyfighter.cabs.maintenance.api;
 
 import io.legacyfighter.cabs.maintenance.model.dict.MaintenancePartsDictionary;
-import io.legacyfighter.cabs.maintenance.model.roles.mainteance.MaintenanceContract;
-import io.legacyfighter.cabs.maintenance.model.roles.mainteance.MaintenanceRequest;
+import io.legacyfighter.cabs.maintenance.model.mainteance.MaintenanceContract;
+import io.legacyfighter.cabs.maintenance.model.mainteance.MaintenanceRequest;
 import io.legacyfighter.cabs.money.Money;
 import io.legacyfighter.cabs.party.api.PartyId;
 import org.junit.jupiter.api.Test;
@@ -30,18 +30,13 @@ class MaintenanceProcessTest {
     private MaintenanceProcess maintenanceProcess;
 
     @Test
-    void asoMaintenanceCoversAllFromContractForFree() {
+    void asoMaintenanceCoversAllForFree() {
         // given
         maintenanceContractManager.asoMaintenanceRegistered(handlingParty, vehicle);
         // and
         Set<MaintenancePartsDictionary> maintenanceParts = Set.of(ENGINE, SUSPENSION, WINDOWS);
         // and
-        MaintenanceContract maintenanceContract = new MaintenanceContract(
-                Map.of(
-                        ENGINE, Money.ZERO,
-                        SUSPENSION, Money.ZERO
-                )
-        );
+        MaintenanceContract maintenanceContract = MaintenanceContract.freeMaintenanceContract();
         // and
         MaintenanceRequest maintenanceRequest = new MaintenanceRequest(vehicle, maintenanceParts, maintenanceContract);
 
@@ -52,7 +47,7 @@ class MaintenanceProcessTest {
         new MaintenanceRepairAssert(result)
                 .by(handlingParty)
                 .free()
-                .allPartsBut(maintenanceParts, Set.of(WINDOWS));
+                .allParts(maintenanceParts);
     }
 
     @Test
@@ -62,7 +57,7 @@ class MaintenanceProcessTest {
         // and
         Set<MaintenancePartsDictionary> maintenanceParts = Set.of(ENGINE, SUSPENSION, WINDOWS);
         // and
-        MaintenanceContract maintenanceContract = new MaintenanceContract(
+        MaintenanceContract maintenanceContract = MaintenanceContract.withFullPayment(
                 Map.of(
                         ENGINE, new Money(1000),
                         SUSPENSION, new Money(2000),
@@ -83,13 +78,13 @@ class MaintenanceProcessTest {
     }
 
     @Test
-    void selfServiceMaintenanceCoversAllFromContractForAgreedPriceAndCoverageRatio() {
+    void selfServiceMaintenanceCoversOnlySafePartsFromContractForPartialdPrice() {
         // given
         maintenanceContractManager.selfServiceMaintenanceContractSigned(handlingParty, vehicle);
         // and
         Set<MaintenancePartsDictionary> maintenanceParts = Set.of(ENGINE, WINDSHIELD_WASHER_FLUID, WHEELS, WINDOWS);
         // and
-        MaintenanceContract maintenanceContract = new MaintenanceContract(
+        MaintenanceContract maintenanceContract = MaintenanceContract.withPartialPayment(
                 Map.of(
                         WINDSHIELD_WASHER_FLUID, new Money(500),
                         WHEELS, new Money(750),

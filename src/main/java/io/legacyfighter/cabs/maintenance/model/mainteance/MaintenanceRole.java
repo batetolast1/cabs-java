@@ -1,4 +1,4 @@
-package io.legacyfighter.cabs.maintenance.model.roles.mainteance;
+package io.legacyfighter.cabs.maintenance.model.mainteance;
 
 import io.legacyfighter.cabs.party.model.party.Party;
 import io.legacyfighter.cabs.party.model.role.PartyBasedRole;

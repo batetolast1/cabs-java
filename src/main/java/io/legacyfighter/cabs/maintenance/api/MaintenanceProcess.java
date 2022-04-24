@@ -1,10 +1,8 @@
 package io.legacyfighter.cabs.maintenance.api;
 
 import io.legacyfighter.cabs.maintenance.model.dict.PartyRelationshipsDictionary;
-import io.legacyfighter.cabs.maintenance.model.roles.mainteance.MaintenanceRequest;
-import io.legacyfighter.cabs.maintenance.model.roles.mainteance.MaintenanceRole;
+import io.legacyfighter.cabs.maintenance.model.mainteance.MaintenanceRequest;
 import io.legacyfighter.cabs.party.api.PartyMapper;
-import io.legacyfighter.cabs.party.api.RoleObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,15 +11,18 @@ public class MaintenanceProcess {
 
     private final PartyMapper partyMapper;
 
+    private final MaintenanceRoleObjectFactory maintenanceRoleObjectFactory;
+
     @Autowired
-    public MaintenanceProcess(PartyMapper partyMapper) {
+    public MaintenanceProcess(PartyMapper partyMapper,
+                              MaintenanceRoleObjectFactory maintenanceRoleObjectFactory) {
         this.partyMapper = partyMapper;
+        this.maintenanceRoleObjectFactory = maintenanceRoleObjectFactory;
     }
 
     public MaintenanceResolveResult resolve(MaintenanceRequest maintenanceRequest) {
         return partyMapper.mapRelation(maintenanceRequest.getVehicle(), PartyRelationshipsDictionary.MAINTENANCE.name())
-                .map(RoleObjectFactory::from)
-                .flatMap(roleObjectFactory -> roleObjectFactory.getRole(MaintenanceRole.class))
+                .flatMap(partyRelationship -> maintenanceRoleObjectFactory.getRole(partyRelationship.getRoleA(), partyRelationship.getPartyA()))
                 .map(maintenanceRole -> maintenanceRole.handle(maintenanceRequest))
                 .map(maintenanceResult ->
                         new MaintenanceResolveResult(

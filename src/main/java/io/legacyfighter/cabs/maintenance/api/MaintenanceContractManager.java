@@ -29,8 +29,8 @@ public class MaintenanceContractManager {
 
         partyRelationshipRepository.put(
                 PartyRelationshipsDictionary.MAINTENANCE.toString(),
-                PartyRolesDictionary.GUARANTOR.getRoleName(), distributor,
-                PartyRolesDictionary.CUSTOMER.getRoleName(), vehicle
+                PartyRolesDictionary.GUARANTOR.toString(), distributor,
+                PartyRolesDictionary.CUSTOMER.toString(), vehicle
         );
     }
 
@@ -41,8 +41,8 @@ public class MaintenanceContractManager {
 
         partyRelationshipRepository.put(
                 PartyRelationshipsDictionary.MAINTENANCE.toString(),
-                PartyRolesDictionary.SERVICE.getRoleName(), service,
-                PartyRolesDictionary.LESSEE.getRoleName(), vehicle
+                PartyRolesDictionary.SERVICE.toString(), service,
+                PartyRolesDictionary.LESSEE.toString(), vehicle
         );
     }
 
@@ -53,8 +53,8 @@ public class MaintenanceContractManager {
 
         partyRelationshipRepository.put(
                 PartyRelationshipsDictionary.MAINTENANCE.toString(),
-                PartyRolesDictionary.SELF_SERVICE.getRoleName(), owner,
-                PartyRolesDictionary.OWNER.getRoleName(), vehicle
+                PartyRolesDictionary.SELF_SERVICE.toString(), owner,
+                PartyRolesDictionary.OWNER.toString(), vehicle
         );
     }
 }
