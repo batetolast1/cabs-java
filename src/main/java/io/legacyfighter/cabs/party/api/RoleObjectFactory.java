@@ -33,10 +33,10 @@ public class RoleObjectFactory {
         add(partyRelationship.getRoleB(), partyRelationship.getPartyB());
     }
 
-    private void add(String role, Party party) {
+    private <T extends PartyBasedRole> void add(String role, Party party) {
         try {
             //in sake of simplicity: a role name is same as a class name with no mapping between them
-            Class<PartyBasedRole> clazz = (Class<PartyBasedRole>) Class.forName(role);
+            Class<? extends PartyBasedRole> clazz = (Class<T>) Class.forName(role);
             PartyBasedRole instance = clazz.getConstructor(Party.class).newInstance(party);
             roles.put(clazz, instance);
         } catch (Exception e) {
