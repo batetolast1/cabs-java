@@ -40,6 +40,10 @@ public class Money {
         return value;
     }
 
+    public boolean isLessThan(Money other) {
+        return this.value < other.value;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

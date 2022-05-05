@@ -59,4 +59,12 @@ class MoneyTest {
         assertThat(new Money(100).percentage(30.0).toString()).hasToString("0.30");
         assertThat(new Money(1).percentage(40.0).toString()).hasToString("0.00");
     }
+
+    @Test
+    void canCheckIfLessThanOther() {
+        //expect
+        assertThat(new Money(100).isLessThan(new Money(101))).isTrue();
+        assertThat(new Money(100).isLessThan(new Money(100))).isFalse();
+        assertThat(new Money(100).isLessThan(new Money(99))).isFalse();
+    }
 }
