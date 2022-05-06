@@ -54,14 +54,12 @@ class SqlBasedDriverReportCreator {
                     "ds.car_brand, " +
                     "" +
                     "t.id AS TRANSIT_ID, " +
-                    "t.name AS TARIFF_NAME, " +
+                    "t.tariff_json AS TARIFF_JSON, " +
                     "t.status AS TRANSIT_STATUS, " +
                     "t.km, " +
-                    "t.km_rate, " +
                     "t.price, " +
                     "t.drivers_fee, " +
                     "t.estimated_price, " +
-                    "t.base_fee, " +
                     "t.date_time, " +
                     "t.published, " +
                     "t.accepted_at, " +
@@ -272,17 +270,19 @@ class SqlBasedDriverReportCreator {
     }
 
     private TransitDTO retrieveTransit(Tuple transit, DriverDTO driverDTO) {
+        Tariff tariff = TariffJsonMapper.deserialize((String) transit.get("TARIFF_JSON"));
+
         return new TransitDTO(
                 transit.get("TRANSIT_ID") == null ? null : ((Number) transit.get("TRANSIT_ID")).longValue(),
-                (String) transit.get("TARIFF_NAME"),
+                tariff.getName(),
                 transit.get("TRANSIT_STATUS") == null ? null : Transit.Status.values()[((Integer) transit.get("TRANSIT_STATUS"))],
                 driverDTO,
                 transit.get("KM") == null ? null : Distance.ofKm(((Number) transit.get("KM")).floatValue()),
-                transit.get("KM_RATE") == null ? null : ((Number) transit.get("KM_RATE")).floatValue(),
+                tariff.getKmRate(),
                 transit.get("PRICE") == null ? null : new BigDecimal(((Number) transit.get("PRICE")).intValue()),
                 transit.get("DRIVERS_FEE") == null ? null : new BigDecimal(((Number) transit.get("DRIVERS_FEE")).intValue()),
                 transit.get("ESTIMATED_PRICE") == null ? null : new BigDecimal(((Number) transit.get("ESTIMATED_PRICE")).intValue()),
-                transit.get("BASE_FEE") == null ? null : new BigDecimal(((Number) transit.get("BASE_FEE")).intValue()),
+                new BigDecimal(tariff.getBaseFee()),
                 transit.get("DATE_TIME") == null ? null : ((Timestamp) transit.get("DATE_TIME")).toInstant(),
                 transit.get("PUBLISHED") == null ? null : ((Timestamp) transit.get("PUBLISHED")).toInstant(),
                 transit.get("ACCEPTED_AT") == null ? null : ((Timestamp) transit.get("ACCEPTED_AT")).toInstant(),

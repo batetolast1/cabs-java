@@ -12,7 +12,7 @@ class TariffTest {
     @Test
     void newYearsEveTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.NEW_YEARS_EVE);
+        Tariff tariff = DefaultTariff.ofTime(Dates.NEW_YEARS_EVE);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(4600));
@@ -23,7 +23,7 @@ class TariffTest {
     @Test
     void newYearMorningTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.NEW_YEAR_MORNING);
+        Tariff tariff = DefaultTariff.ofTime(Dates.NEW_YEAR_MORNING);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(4600));
@@ -34,7 +34,7 @@ class TariffTest {
     @Test
     void fridayEveningTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.FRIDAY_EVENING);
+        Tariff tariff = DefaultTariff.ofTime(Dates.FRIDAY_EVENING);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(3500));
@@ -45,7 +45,7 @@ class TariffTest {
     @Test
     void SaturdayMorningTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.SATURDAY_MORNING);
+        Tariff tariff = DefaultTariff.ofTime(Dates.SATURDAY_MORNING);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(3500));
@@ -56,7 +56,7 @@ class TariffTest {
     @Test
     void saturdayEveningTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.SATURDAY_EVENING);
+        Tariff tariff = DefaultTariff.ofTime(Dates.SATURDAY_EVENING);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(3500));
@@ -67,7 +67,7 @@ class TariffTest {
     @Test
     void sundayMorningTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.SUNDAY_MORNING);
+        Tariff tariff = DefaultTariff.ofTime(Dates.SUNDAY_MORNING);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(3500));
@@ -78,7 +78,7 @@ class TariffTest {
     @Test
     void saturdayTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.SATURDAY);
+        Tariff tariff = DefaultTariff.ofTime(Dates.SATURDAY);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(2300));
@@ -89,7 +89,7 @@ class TariffTest {
     @Test
     void sundayTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.SUNDAY);
+        Tariff tariff = DefaultTariff.ofTime(Dates.SUNDAY);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(2300));
@@ -100,11 +100,22 @@ class TariffTest {
     @Test
     void workingDayTariffShouldBeDisplayedAndCalculated() {
         // when
-        Tariff tariff = Tariff.ofTime(Dates.WORKING_DAY);
+        Tariff tariff = DefaultTariff.ofTime(Dates.WORKING_DAY);
 
         // then
         assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(1900));
         assertThat(tariff.getKmRate()).isEqualTo(1.00f);
         assertThat(tariff.getName()).isEqualTo("Standard");
+    }
+
+    @Test
+    void discountedTariffShouldBeDisplayedAndCalculated() {
+        // when
+        Tariff tariff = DefaultTariff.ofTime(Dates.WORKING_DAY.withHour(16));
+
+        // then
+        assertThat(tariff.calculateCost(Distance.ofKm(10.0f))).isEqualTo(new Money(1710));
+        assertThat(tariff.getKmRate()).isEqualTo(0.9f);
+        assertThat(tariff.getName()).isEqualTo("Standard HAPPY HOURS");
     }
 }

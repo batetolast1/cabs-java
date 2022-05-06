@@ -73,8 +73,7 @@ public class Transit extends BaseEntity {
 
     public Integer awaitingDriversResponses = 0;
 
-    @Embedded
-    private Tariff tariff;
+    private String tariffJson;
 
     private float km;
 
@@ -120,10 +119,10 @@ public class Transit extends BaseEntity {
         this.to = to;
         this.carType = carClass;
         this.status = Status.DRAFT;
-        this.tariff = Tariff.ofTime(date.atZone(ZoneId.systemDefault()).toLocalDateTime());
+        this.tariffJson = TariffJsonMapper.serialize(DefaultTariff.ofTime(date.atZone(ZoneId.systemDefault()).toLocalDateTime()));
         this.dateTime = date;
         this.km = km.toKmInFloat();
-        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.estimatedPrice = this.getTariff().calculateCost(ofKm(this.km));
     }
 
     public void changePickupTo(Address newAddress, Distance newDistance, double distanceFromPreviousPickup) {
@@ -137,7 +136,7 @@ public class Transit extends BaseEntity {
 
         this.from = newAddress;
         this.km = newDistance.toKmInFloat();
-        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.estimatedPrice = this.getTariff().calculateCost(ofKm(this.km));
         this.pickupAddressChangeCounter++;
     }
 
@@ -148,7 +147,7 @@ public class Transit extends BaseEntity {
 
         this.to = newAddress;
         this.km = newDistance.toKmInFloat();
-        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.estimatedPrice = this.getTariff().calculateCost(ofKm(this.km));
     }
 
     public boolean canCancel() {
@@ -162,7 +161,7 @@ public class Transit extends BaseEntity {
         this.status = Status.CANCELLED;
         this.driver = null;
         this.km = Distance.ZERO.toKmInFloat();
-        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.estimatedPrice = this.getTariff().calculateCost(ofKm(this.km));
         this.price = null;
         this.awaitingDriversResponses = 0;
     }
@@ -180,7 +179,7 @@ public class Transit extends BaseEntity {
         this.status = Status.DRIVER_ASSIGNMENT_FAILED;
         this.driver = null;
         this.km = Distance.ZERO.toKmInFloat();
-        this.estimatedPrice = this.tariff.calculateCost(ofKm(this.km));
+        this.estimatedPrice = this.getTariff().calculateCost(ofKm(this.km));
         this.awaitingDriversResponses = 0;
     }
 
@@ -229,7 +228,7 @@ public class Transit extends BaseEntity {
             throw new IllegalArgumentException("Cannot complete Transit, id = " + getId());
         }
 
-        Money money = this.tariff.calculateCost(ofKm(this.km));
+        Money money = this.getTariff().calculateCost(ofKm(this.km));
         this.to = destinationAddress;
         this.km = distance.toKmInFloat();
         this.estimatedPrice = money;
@@ -262,7 +261,7 @@ public class Transit extends BaseEntity {
     }
 
     private Money calculateCost() {
-        Money money = this.tariff.calculateCost(ofKm(km));
+        Money money = this.getTariff().calculateCost(ofKm(km));
         this.price = money;
         return money;
     }
@@ -340,7 +339,7 @@ public class Transit extends BaseEntity {
     }
 
     public Tariff getTariff() {
-        return tariff;
+        return TariffJsonMapper.deserialize(tariffJson);
     }
 
     public void setDriversFee(Money driversFee) {
