@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -234,83 +235,87 @@ public class TransitService {
     public Transit findDriversForTransit(Long transitId) {
         Transit transit = transitRepository.getOne(transitId);
 
-        if (transit != null) {
-            if (transit.getStatus().equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT)) {
-                int distanceToCheck = 0;
-
-                // Tested on production, works as expected.
-                // If you change this code and the system will collapse AGAIN, I'll find you...
-                while (true) {
-                    if (transit.getAwaitingDriversResponses()
-                            > 4) {
-                        return transit;
-                    }
-
-                    distanceToCheck++;
-
-                    // FIXME: to refactor when the final business logic will be determined
-                    Instant now = Instant.now(clock);
-                    if (transit.shouldNotWaitForDriverAnyMore(now) || (distanceToCheck >= 20)) {
-                        transit.failDriverAssignment();
-                        transitRepository.save(transit);
-                        return transit;
-                    }
-
-                    double[] geocoded = new double[2];
-                    try {
-                        geocoded = geocodingService.geocodeAddress(transit.getFrom());
-                    } catch (Exception e) {
-                        // Geocoding failed! Ask Jessica or Bryan for some help if needed.
-                    }
-
-                    double longitude = geocoded[1];
-                    double latitude = geocoded[0];
-
-                    List<DriverPositionDTOV2> driversAvgPositions = findDriverPositionsInArea(distanceToCheck, longitude, latitude, 5);
-
-                    if (!driversAvgPositions.isEmpty()) {
-                        List<CarType.CarClass> carClasses = new ArrayList<>();
-                        List<CarType.CarClass> activeCarClasses = carTypeService.findActiveCarClasses();
-                        if (activeCarClasses.isEmpty()) {
-                            return transit;
-                        }
-                        if (transit.getCarType() != null) {
-                            if (activeCarClasses.contains(transit.getCarType())) {
-                                carClasses.add(transit.getCarType());
-                            } else {
-                                return transit;
-                            }
-                        } else {
-                            carClasses.addAll(activeCarClasses);
-                        }
-
-                        driversAvgPositions = findNearbyAvailableDrivers(longitude, latitude, driversAvgPositions, carClasses, 20);
-
-                        // Iterate across average driver positions
-                        for (DriverPositionDTOV2 driverAvgPosition : driversAvgPositions) {
-                            Driver driver = driverAvgPosition.getDriver();
-                            if (driver.getStatus().equals(Driver.Status.ACTIVE) && !driver.isOccupied()) {
-                                if (transit.canProposeTo(driver)) {
-                                    transit.proposeTo(driver);
-                                    notificationService.notifyAboutPossibleTransit(driver.getId(), transitId);
-                                }
-                            } else {
-                                // Not implemented yet!
-                            }
-                        }
-
-                        transitRepository.save(transit);
-                    } else {
-                        // Next iteration, no drivers at specified area
-                        continue;
-                    }
-                }
-            } else {
-                throw new IllegalStateException("..., id = " + transitId);
-            }
-        } else {
+        if (transit == null) {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
+        if (!transit.getStatus().equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT)) {
+            throw new IllegalStateException("..., id = " + transitId);
+        }
+
+        int distanceToCheck = 0;
+
+        // Tested on production, works as expected.
+        // If you change this code and the system will collapse AGAIN, I'll find you...
+        while (true) {
+            if (transit.getAwaitingDriversResponses() > 4) {
+                return transit;
+            }
+
+            distanceToCheck++;
+
+            // FIXME: to refactor when the final business logic will be determined
+            Instant now = Instant.now(clock);
+            if (transit.shouldNotWaitForDriverAnyMore(now) || (distanceToCheck >= 20)) {
+                transit.failDriverAssignment();
+                transitRepository.save(transit);
+                return transit;
+            }
+
+            double[] geocoded = new double[2];
+            try {
+                geocoded = geocodingService.geocodeAddress(transit.getFrom());
+            } catch (Exception e) {
+                // Geocoding failed! Ask Jessica or Bryan for some help if needed.
+            }
+
+            double longitude = geocoded[1];
+            double latitude = geocoded[0];
+
+            List<DriverPositionDTOV2> driversAvgPositions = findDriverPositionsInArea(distanceToCheck, longitude, latitude, 5);
+            if (!driversAvgPositions.isEmpty()) {
+                List<CarType.CarClass> availableCarClasses = getAvailableCarClasses(transit);
+                if (availableCarClasses.isEmpty()) {
+                    return transit;
+                }
+
+                driversAvgPositions = findNearbyAvailableDrivers(longitude, latitude, driversAvgPositions, availableCarClasses, 20);
+
+                // Iterate across average driver positions
+                for (DriverPositionDTOV2 driverAvgPosition : driversAvgPositions) {
+                    Driver driver = driverAvgPosition.getDriver();
+                    if (canProposeToDriver(transit, driver)) {
+                        transit.proposeTo(driver);
+                        notificationService.notifyAboutPossibleTransit(driver.getId(), transitId);
+                    }
+                }
+
+                transitRepository.save(transit);
+            } else {
+                // Next iteration, no drivers at specified area
+                continue;
+            }
+        }
+    }
+
+    private boolean canProposeToDriver(Transit transit, Driver driver) {
+        return driver.getStatus().equals(Driver.Status.ACTIVE) && !driver.isOccupied()
+                && transit.canProposeTo(driver);
+    }
+
+    private List<CarType.CarClass> getAvailableCarClasses(Transit transit) {
+        List<CarType.CarClass> activeCarClasses = carTypeService.findActiveCarClasses();
+        if (activeCarClasses.isEmpty() ||
+                (transit.getCarType() != null && !activeCarClasses.contains(transit.getCarType()))) {
+            return Collections.emptyList();
+        }
+
+        List<CarType.CarClass> carClasses = new ArrayList<>();
+        if (transit.getCarType() != null && activeCarClasses.contains(transit.getCarType())) {
+            carClasses.add(transit.getCarType());
+        } else {
+            carClasses.addAll(activeCarClasses);
+        }
+        return carClasses;
     }
 
     private List<DriverPositionDTOV2> findNearbyAvailableDrivers(double longitude,
