@@ -235,11 +235,8 @@ public class TransitService {
         Transit transit = transitRepository.getOne(transitId);
 
         if (transit != null) {
-            if (transit.getStatus()
-                    .equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT)) {
-
-
-                Integer distanceToCheck = 0;
+            if (transit.getStatus().equals(Transit.Status.WAITING_FOR_DRIVER_ASSIGNMENT)) {
+                int distanceToCheck = 0;
 
                 // Tested on production, works as expected.
                 // If you change this code and the system will collapse AGAIN, I'll find you...
@@ -258,9 +255,8 @@ public class TransitService {
                         transitRepository.save(transit);
                         return transit;
                     }
+
                     double[] geocoded = new double[2];
-
-
                     try {
                         geocoded = geocodingService.geocodeAddress(transit.getFrom());
                     } catch (Exception e) {
@@ -270,46 +266,15 @@ public class TransitService {
                     double longitude = geocoded[1];
                     double latitude = geocoded[0];
 
-                    //https://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
-                    //Earth’s radius, sphere
-                    //double R = 6378;
-                    double R = 6371; // Changed to 6371 due to Copy&Paste pattern from different source
-
-                    //offsets in meters
-                    double dn = distanceToCheck;
-                    double de = distanceToCheck;
-
-                    //Coordinate offsets in radians
-                    double dLat = dn / R;
-                    double dLon = de / (R * Math.cos(Math.PI * latitude / 180));
-
-                    //Offset positions, decimal degrees
-                    double latitudeMin = latitude - dLat * 180 / Math.PI;
-                    double latitudeMax = latitude + dLat *
-                            180 / Math.PI;
-                    double longitudeMin = longitude - dLon *
-                            180 / Math.PI;
-                    double longitudeMax = longitude + dLon * 180 / Math.PI;
-
-                    List<DriverPositionDTOV2> driversAvgPositions = driverPositionRepository
-                            .findAverageDriverPositionSince(latitudeMin, latitudeMax, longitudeMin, longitudeMax, Instant.now(clock).minus(5, ChronoUnit.MINUTES));
+                    List<DriverPositionDTOV2> driversAvgPositions = findDriverPositionsInArea(distanceToCheck, longitude, latitude, 5);
 
                     if (!driversAvgPositions.isEmpty()) {
-                        Comparator<DriverPositionDTOV2> comparator = (DriverPositionDTOV2 d1, DriverPositionDTOV2 d2) -> Double.compare(
-                                Math.sqrt(Math.pow(latitude - d1.getLatitude(), 2) + Math.pow(longitude - d1.getLongitude(), 2)),
-                                Math.sqrt(Math.pow(latitude - d2.getLatitude(), 2) + Math.pow(longitude - d2.getLongitude(), 2))
-                        );
-                        driversAvgPositions.sort(comparator);
-                        driversAvgPositions = driversAvgPositions.stream().limit(20).collect(toList());
-
                         List<CarType.CarClass> carClasses = new ArrayList<>();
                         List<CarType.CarClass> activeCarClasses = carTypeService.findActiveCarClasses();
                         if (activeCarClasses.isEmpty()) {
                             return transit;
                         }
-                        if (transit.getCarType()
-
-                                != null) {
+                        if (transit.getCarType() != null) {
                             if (activeCarClasses.contains(transit.getCarType())) {
                                 carClasses.add(transit.getCarType());
                             } else {
@@ -319,23 +284,12 @@ public class TransitService {
                             carClasses.addAll(activeCarClasses);
                         }
 
-                        List<Driver> drivers = driversAvgPositions.stream().map(DriverPositionDTOV2::getDriver).collect(toList());
-
-                        List<Long> activeDriverIdsInSpecificCar = driverSessionRepository.findAllByLoggedOutAtNullAndDriverInAndCarClassIn(drivers, carClasses)
-
-                                .stream()
-                                .map(ds -> ds.getDriver().getId()).collect(toList());
-
-                        driversAvgPositions = driversAvgPositions
-                                .stream()
-                                .filter(dp -> activeDriverIdsInSpecificCar.contains(dp.getDriver().getId())).collect(toList());
+                        driversAvgPositions = findNearbyAvailableDrivers(longitude, latitude, driversAvgPositions, carClasses, 20);
 
                         // Iterate across average driver positions
                         for (DriverPositionDTOV2 driverAvgPosition : driversAvgPositions) {
                             Driver driver = driverAvgPosition.getDriver();
-                            if (driver.getStatus().equals(Driver.Status.ACTIVE) &&
-
-                                    !driver.isOccupied()) {
+                            if (driver.getStatus().equals(Driver.Status.ACTIVE) && !driver.isOccupied()) {
                                 if (transit.canProposeTo(driver)) {
                                     transit.proposeTo(driver);
                                     notificationService.notifyAboutPossibleTransit(driver.getId(), transitId);
@@ -346,7 +300,6 @@ public class TransitService {
                         }
 
                         transitRepository.save(transit);
-
                     } else {
                         // Next iteration, no drivers at specified area
                         continue;
@@ -358,7 +311,68 @@ public class TransitService {
         } else {
             throw new IllegalArgumentException("Transit does not exist, id = " + transitId);
         }
+    }
 
+    private List<DriverPositionDTOV2> findNearbyAvailableDrivers(double longitude,
+                                                                 double latitude,
+                                                                 List<DriverPositionDTOV2> driversAvgPositions,
+                                                                 List<CarType.CarClass> carClasses,
+                                                                 int maxSize) {
+        Comparator<DriverPositionDTOV2> comparator = Comparator.comparingDouble(
+                (DriverPositionDTOV2 d) ->
+                        Math.sqrt(Math.pow(latitude - d.getLatitude(), 2) + Math.pow(longitude - d.getLongitude(), 2))
+        );
+
+        driversAvgPositions = driversAvgPositions.stream()
+                .sorted(comparator)
+                .limit(maxSize)
+                .collect(toList());
+
+        List<Driver> drivers = driversAvgPositions.stream()
+                .map(DriverPositionDTOV2::getDriver)
+                .collect(toList());
+
+        List<Long> activeDriverIdsInSpecificCar = driverSessionRepository.findAllByLoggedOutAtNullAndDriverInAndCarClassIn(drivers, carClasses)
+                .stream()
+                .map(ds -> ds.getDriver().getId()).collect(toList());
+
+        return driversAvgPositions
+                .stream()
+                .filter(dp -> activeDriverIdsInSpecificCar.contains(dp.getDriver().getId()))
+                .collect(toList());
+    }
+
+    private List<DriverPositionDTOV2> findDriverPositionsInArea(Integer distanceToCheck,
+                                                                double longitude,
+                                                                double latitude,
+                                                                int minutes) {
+        //https://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
+        //Earth’s radius, sphere
+        //double R = 6378;
+        double R = 6371; // Changed to 6371 due to Copy&Paste pattern from different source
+
+        //offsets in meters
+        double dn = distanceToCheck;
+        double de = distanceToCheck;
+
+        //Coordinate offsets in radians
+        double dLat = dn / R;
+        double dLon = de / (R * Math.cos(Math.PI * latitude / 180));
+
+        //Offset positions, decimal degrees
+        double latitudeMin = latitude - dLat * 180 / Math.PI;
+        double latitudeMax = latitude + dLat * 180 / Math.PI;
+        double longitudeMin = longitude - dLon * 180 / Math.PI;
+        double longitudeMax = longitude + dLon * 180 / Math.PI;
+
+        return driverPositionRepository
+                .findAverageDriverPositionSince(
+                        latitudeMin,
+                        latitudeMax,
+                        longitudeMin,
+                        longitudeMax,
+                        Instant.now(clock).minus(minutes, ChronoUnit.MINUTES)
+                );
     }
 
     @Transactional
