@@ -214,7 +214,7 @@ class TransitLifeCycleTest {
         Transit transit = requestTransitFromTo(from, to);
 
         // when
-        transit.changeDestinationTo(newTo, Distance.ofKm(10));
+        transit.changeDestinationTo(newTo, Distance.ofKm(10), new PositiveRule());
 
         // then
         assertThat(transit.getTo()).isEqualTo(newTo);
@@ -233,7 +233,7 @@ class TransitLifeCycleTest {
         transit.publishAt(Instant.now());
 
         // when
-        transit.changeDestinationTo(newTo, Distance.ofKm(10));
+        transit.changeDestinationTo(newTo, Distance.ofKm(10), new PositiveRule());
 
         // then
         assertThat(transit.getTo()).isEqualTo(newTo);
@@ -254,7 +254,7 @@ class TransitLifeCycleTest {
         transit.cancel();
 
         // when
-        transit.changeDestinationTo(newTo, Distance.ofKm(10));
+        transit.changeDestinationTo(newTo, Distance.ofKm(10), new PositiveRule());
 
         // then
         assertThat(transit.getTo()).isEqualTo(newTo);
@@ -279,7 +279,7 @@ class TransitLifeCycleTest {
         transit.acceptBy(driver, Instant.now());
 
         // when
-        transit.changeDestinationTo(newTo, Distance.ofKm(10));
+        transit.changeDestinationTo(newTo, Distance.ofKm(10), new PositiveRule());
 
         // then
         assertThat(transit.getTo()).isEqualTo(newTo);
@@ -306,7 +306,7 @@ class TransitLifeCycleTest {
         transit.startAt(Instant.now());
 
         // when
-        transit.changeDestinationTo(newTo, Distance.ofKm(10));
+        transit.changeDestinationTo(newTo, Distance.ofKm(10), new PositiveRule());
 
         // then
         assertThat(transit.getTo()).isEqualTo(newTo);
@@ -336,7 +336,7 @@ class TransitLifeCycleTest {
 
         // when
         assertThatExceptionOfType(IllegalStateException.class)
-                .isThrownBy(() -> transit.changeDestinationTo(newTo, Distance.ofKm(10)));
+                .isThrownBy(() -> transit.changeDestinationTo(newTo, Distance.ofKm(10), new PositiveRule()));
     }
 
     @Test

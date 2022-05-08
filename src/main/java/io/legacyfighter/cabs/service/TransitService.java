@@ -15,10 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -189,7 +186,15 @@ public class TransitService {
         double[] geoTo = geocodingService.geocodeAddress(newAddress);
         Distance newDistance = Distance.ofKm((float) distanceCalculator.calculateByMap(geoFrom[0], geoFrom[1], geoTo[0], geoTo[1]));
 
-        transit.changeDestinationTo(newAddress, newDistance);
+        Rule rule = new OrRule(Set.of(
+                new StatusRule(Transit.Status.DRAFT),
+                new StatusRule(Transit.Status.CANCELLED),
+                new StatusRule(Transit.Status.DRIVER_ASSIGNMENT_FAILED),
+                new NoFurtherThanRule(Distance.ofKm(50), Transit.Status.TRANSIT_TO_PASSENGER),
+                new NoFurtherThanRule(Distance.ofKm(45), Transit.Status.IN_TRANSIT))
+        );
+
+        transit.changeDestinationTo(newAddress, newDistance, rule);
 
         if (transit.getDriver() != null) {
             notificationService.notifyAboutChangedTransitAddress(transit.getDriver().getId(), transitId);

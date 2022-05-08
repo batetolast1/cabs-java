@@ -90,4 +90,8 @@ public final class Distance {
     public Distance add(Distance travelled) {
         return new Distance(this.km + travelled.km);
     }
+
+    public static Distance between(Distance from, Distance to) {
+        return new Distance(Math.abs(from.km - to.km));
+    }
 }

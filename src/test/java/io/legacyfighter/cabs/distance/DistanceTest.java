@@ -74,4 +74,9 @@ class DistanceTest {
         assertThat(Distance.ofKm(10.0).add(Distance.ZERO)).isEqualTo(Distance.ofKm(10.0));
         assertThat(Distance.ZERO.add(Distance.ZERO)).isEqualTo(Distance.ZERO);
     }
+
+    @Test
+    void canCalculateTransitBetween() {
+        assertThat(Distance.between(Distance.ofKm(10), Distance.ofKm(5))).isEqualTo(Distance.ofKm(5));
+    }
 }

@@ -140,8 +140,11 @@ public class Transit extends BaseEntity {
         this.pickupAddressChangeCounter++;
     }
 
-    public void changeDestinationTo(Address newAddress, Distance newDistance) {
-        if (status.equals(Transit.Status.COMPLETED)) {
+    public void changeDestinationTo(Address newAddress, Distance newDistance, Rule rule) {
+        if (this.status.equals(Transit.Status.COMPLETED)) {
+            throw new IllegalStateException("Address 'to' cannot be changed, id = " + getId());
+        }
+        if (!rule.isSatisfied(this, newDistance)) {
             throw new IllegalStateException("Address 'to' cannot be changed, id = " + getId());
         }
 
