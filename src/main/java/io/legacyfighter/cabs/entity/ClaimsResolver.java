@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-public class ClaimsResolver extends BaseEntity {
+public class ClaimsResolver extends BaseEntity implements Aggregate {
 
     public enum WhoToAsk {
 
@@ -24,6 +24,7 @@ public class ClaimsResolver extends BaseEntity {
         NO_MILES, EXTRA_MILES
     }
 
+    @SuppressWarnings("unused")
     private Long clientId;
 
     private String claimedTransitIds;

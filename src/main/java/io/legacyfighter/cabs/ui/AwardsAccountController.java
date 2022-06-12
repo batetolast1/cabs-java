@@ -2,7 +2,6 @@ package io.legacyfighter.cabs.ui;
 
 import io.legacyfighter.cabs.dto.AwardsAccountDTO;
 import io.legacyfighter.cabs.service.AwardsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,11 +11,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AwardsAccountController {
 
-    @Autowired
-    private AwardsService awardsService;
+    private final AwardsService awardsService;
+
+    public AwardsAccountController(AwardsService awardsService) {
+        this.awardsService = awardsService;
+    }
 
     @PostMapping("/clients/{clientId}/awards")
-    ResponseEntity register(@PathVariable Long clientId) {
+    ResponseEntity<AwardsAccountDTO> register(@PathVariable Long clientId) {
         awardsService.registerToProgram(clientId);
         return ResponseEntity.ok(awardsService.findBy(clientId));
     }

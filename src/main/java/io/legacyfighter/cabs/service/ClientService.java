@@ -3,14 +3,16 @@ package io.legacyfighter.cabs.service;
 import io.legacyfighter.cabs.dto.ClientDTO;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.repository.ClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ClientService {
-    @Autowired
-    private ClientRepository clientRepository;
+    private final ClientRepository clientRepository;
+
+    public ClientService(ClientRepository clientRepository) {
+        this.clientRepository = clientRepository;
+    }
 
     @Transactional
     public Client registerClient(String name, String lastName, Client.Type type, Client.PaymentType paymentType) {

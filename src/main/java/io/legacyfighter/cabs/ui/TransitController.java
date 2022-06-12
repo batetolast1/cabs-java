@@ -4,14 +4,16 @@ import io.legacyfighter.cabs.dto.AddressDTO;
 import io.legacyfighter.cabs.dto.TransitDTO;
 import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.service.TransitService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class TransitController {
 
-    @Autowired
-    private TransitService transitService;
+    private final TransitService transitService;
+
+    public TransitController(TransitService transitService) {
+        this.transitService = transitService;
+    }
 
     @GetMapping("/transits/{id}")
     public TransitDTO getTransit(@PathVariable Long id) {

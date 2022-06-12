@@ -10,7 +10,6 @@ import io.legacyfighter.cabs.repository.DriverAttributeRepository;
 import io.legacyfighter.cabs.repository.DriverRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
 import org.apache.commons.codec.binary.Base64;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,7 @@ import java.time.Instant;
 import java.time.Month;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,17 +26,23 @@ public class DriverService {
 
     public static final String DRIVER_LICENSE_REGEX = "^[A-Z9]{5}\\d{6}[A-Z9]{2}\\d[A-Z]{2}$";
 
-    @Autowired
-    private DriverRepository driverRepository;
+    private final DriverRepository driverRepository;
 
-    @Autowired
-    private DriverAttributeRepository driverAttributeRepository;
+    private final DriverAttributeRepository driverAttributeRepository;
 
-    @Autowired
-    private TransitRepository transitRepository;
+    private final TransitRepository transitRepository;
 
-    @Autowired
-    private DriverFeeService driverFeeService;
+    private final DriverFeeService driverFeeService;
+
+    public DriverService(DriverRepository driverRepository,
+                         DriverAttributeRepository driverAttributeRepository,
+                         TransitRepository transitRepository,
+                         DriverFeeService driverFeeService) {
+        this.driverRepository = driverRepository;
+        this.driverAttributeRepository = driverAttributeRepository;
+        this.transitRepository = transitRepository;
+        this.driverFeeService = driverFeeService;
+    }
 
     public Driver createDriver(String license, String lastName, String firstName, Driver.Type type, Driver.Status status, String photo) {
         Driver driver = new Driver();
@@ -132,7 +137,7 @@ public class DriverService {
     }
 
     public Map<Month, Money> calculateDriverYearlyPayment(Long driverId, int year) {
-        Map<Month, Money> payments = new HashMap<>();
+        Map<Month, Money> payments = new EnumMap<>(Month.class);
         for (Month m : Month.values()) {
             payments.put(m, calculateDriverMonthlyPayment(driverId, year, m.getValue()));
         }

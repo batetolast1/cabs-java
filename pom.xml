@@ -9,6 +9,7 @@
         <version>2.4.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>io.refactorers</groupId>
     <artifactId>cabs</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -70,6 +71,12 @@
             <artifactId>neo4j</artifactId>
             <version>4.4.6</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>0.23.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -82,10 +89,12 @@
                     <target>11</target>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>

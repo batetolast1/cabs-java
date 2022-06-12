@@ -82,6 +82,6 @@ class CalculateDriverPeriodicPaymentsIntegrationTest {
         expected.put(Month.NOVEMBER, Money.ZERO);
         expected.put(Month.DECEMBER, Money.ZERO);
 
-        assertThat(yearlyPayment).containsExactlyEntriesOf(expected);
+        assertThat(yearlyPayment).containsExactlyInAnyOrderEntriesOf(expected);
     }
 }

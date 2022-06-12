@@ -3,15 +3,17 @@ package io.legacyfighter.cabs.ui;
 import io.legacyfighter.cabs.dto.ClientDTO;
 import io.legacyfighter.cabs.entity.Client;
 import io.legacyfighter.cabs.service.ClientService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class ClientController {
 
-    @Autowired
-    ClientService clientService;
+    private final ClientService clientService;
+
+    public ClientController(ClientService clientService) {
+        this.clientService = clientService;
+    }
 
     @PostMapping("/clients")
     public ResponseEntity<ClientDTO> register(@RequestBody ClientDTO dto) {

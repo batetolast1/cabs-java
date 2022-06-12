@@ -5,18 +5,21 @@ import io.legacyfighter.cabs.entity.Transit;
 import io.legacyfighter.cabs.money.Money;
 import io.legacyfighter.cabs.repository.DriverFeeRepository;
 import io.legacyfighter.cabs.repository.TransitRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DriverFeeService {
 
-    @Autowired
-    private DriverFeeRepository driverFeeRepository;
+    private final DriverFeeRepository driverFeeRepository;
 
-    @Autowired
-    private TransitRepository transitRepository;
+    private final TransitRepository transitRepository;
+
+    public DriverFeeService(DriverFeeRepository driverFeeRepository,
+                            TransitRepository transitRepository) {
+        this.driverFeeRepository = driverFeeRepository;
+        this.transitRepository = transitRepository;
+    }
 
     @Transactional
     public Money calculateDriverFee(Long transitId) {

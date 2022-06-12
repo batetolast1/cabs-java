@@ -2,19 +2,17 @@ package io.legacyfighter.cabs.ui;
 
 import io.legacyfighter.cabs.dto.DriverDTO;
 import io.legacyfighter.cabs.entity.Driver;
-import io.legacyfighter.cabs.repository.DriverRepository;
 import io.legacyfighter.cabs.service.DriverService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class DriverController {
 
-    @Autowired
-    private DriverService driverService;
+    private final DriverService driverService;
 
-    @Autowired
-    private DriverRepository driverRepository;
+    public DriverController(DriverService driverService) {
+        this.driverService = driverService;
+    }
 
     @PostMapping("/drivers")
     DriverDTO createDriver(@RequestParam String license, @RequestParam String firstName, @RequestParam String lastName, @RequestParam String photo) {
